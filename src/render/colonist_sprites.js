@@ -68,7 +68,15 @@ export function drawColonists(ctx, G) {
     ctx.fillStyle = '#ffdbac';
     ctx.beginPath(); ctx.arc(cx, cy - 25, 4.5, 0, Math.PI * 2); ctx.fill();
 
-    // 4. White Rounded Name Badge Placard
+    // 4. Mood indicator dot above head (tiny colored circle)
+    const moodColors = { hopeful: '#2ecc71', stressed: '#e67e22', broken: '#8e44ad' };
+    const moodDot = moodColors[c.mood] || '#888';
+    ctx.fillStyle = moodDot;
+    ctx.beginPath();
+    ctx.arc(cx + 6, cy - 31, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. White Rounded Name Badge Placard
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#111111';
     ctx.lineWidth = 1.2;
@@ -87,6 +95,19 @@ export function drawColonists(ctx, G) {
     ctx.fillText(c.name, cx, cy - 32);
     ctx.textAlign = 'left';
 
+    // 6. Thought bubble — triggered randomly, shows c.thought
+    if (c.thought && c._showThought && !isNight) {
+      drawThoughtBubble(ctx, cx, cy, c.thought, c.mood);
+    }
+
+    // Randomly toggle thought bubble every ~3s
+    if (!c._thoughtTimer) c._thoughtTimer = 0;
+    c._thoughtTimer++;
+    if (c._thoughtTimer > 180 + Math.floor(Math.random() * 240)) {
+      c._thoughtTimer = 0;
+      c._showThought = Math.random() < 0.4; // 40% chance to show
+    }
+
     // Sleep "Zzz" particles when night
     if (isNight && Math.random() < 0.05) {
       G.particles.push({
@@ -100,4 +121,59 @@ export function drawColonists(ctx, G) {
       });
     }
   });
+}
+
+// -------------------------------------------------
+// Draw speech/thought bubble above a colonist
+// -------------------------------------------------
+function drawThoughtBubble(ctx, cx, cy, text, mood) {
+  const maxLen = 28;
+  const display = text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text;
+
+  const pad = 5;
+  ctx.font = '7px sans-serif';
+  const tw = ctx.measureText(display).width;
+  const bw = tw + pad * 2;
+  const bh = 14;
+  const bx = cx - bw / 2;
+  const by = cy - 56;
+
+  // Mood-tinted border color
+  const borderColor = mood === 'hopeful' ? '#2ecc71'
+                    : mood === 'broken'  ? '#8e44ad'
+                    : '#e67e22';
+
+  // Bubble body
+  ctx.fillStyle = 'rgba(10,10,14,0.88)';
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(bx, by, bw, bh, 4);
+  } else {
+    ctx.rect(bx, by, bw, bh);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  // Tail (small triangle pointing down)
+  ctx.fillStyle = 'rgba(10,10,14,0.88)';
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 3, by + bh);
+  ctx.lineTo(cx + 3, by + bh);
+  ctx.lineTo(cx, by + bh + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Text
+  ctx.fillStyle = mood === 'broken' ? '#c084fc'
+                : mood === 'stressed' ? '#fbbf24'
+                : '#d4f7d4';
+  ctx.font = '7px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(display, cx, by + bh - 4);
+  ctx.textAlign = 'left';
 }

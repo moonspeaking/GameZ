@@ -10,6 +10,8 @@ import { updateColonists, getTotalAlivePop } from '../entities/colonists.js';
 import { updatePrologue } from '../systems/story.js';
 import { render } from '../render/renderer.js';
 import { progressDailyResearch } from '../systems/research.js';
+import { updateColonistMoods, checkMoraleIncidents } from '../systems/morale.js';
+import { patchDeathEvents } from '../systems/memorial.js';
 
 let lastTime = 0;
 let isLoopRunning = false;
@@ -49,10 +51,7 @@ export function onNewDay() {
     G.colonists.filter(c => c.status === 'alive').forEach(c => {
       c.hp -= 5;
       if (c.hp <= 0) {
-        c.status = 'dead';
-        G.mechanics.totalDeaths++;
-        eventBus.emit('log', `☠ ${c.name} УМЕР ОТ ГОЛОДА`);
-        eventBus.emit('sound', { type: 'bad' });
+        eventBus.emit('colonist:death', { id: c.id, cause: 'Умер от голода', day: G.day });
       }
     });
     G.mechanics.morale = Math.max(0, G.mechanics.morale - 5);
@@ -62,10 +61,7 @@ export function onNewDay() {
     G.colonists.filter(c => c.status === 'alive').forEach(c => {
       c.hp -= 8;
       if (c.hp <= 0) {
-        c.status = 'dead';
-        G.mechanics.totalDeaths++;
-        eventBus.emit('log', `☠ ${c.name} УМЕР ОТ ОБЕЗВОЖИВАНИЯ`);
-        eventBus.emit('sound', { type: 'bad' });
+        eventBus.emit('colonist:death', { id: c.id, cause: 'Умер от обезвоживания', day: G.day });
       }
     });
     G.mechanics.morale = Math.max(0, G.mechanics.morale - 8);
@@ -113,6 +109,10 @@ export function onNewDay() {
 
   // Daily Science & Tech Research Progress
   progressDailyResearch();
+
+  // Morale: update individual moods and check for incidents
+  updateColonistMoods();
+  checkMoraleIncidents();
 
   // Autonomous building
   if (G.day > 2 && G.day % 4 === 0) {
@@ -243,6 +243,7 @@ export function gameLoop(now) {
 export function startLoop() {
   if (isLoopRunning) return;
   isLoopRunning = true;
+  patchDeathEvents();  // Wire colonist:death events → memorial
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);
 }

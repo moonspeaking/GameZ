@@ -36,6 +36,10 @@ export const SaveSystem = {
           progress: G.research.progress || 0,
           completed: [...(G.research.completed || [])]
         } : null,
+        memorial: G.memorial ? {
+          fallen: [...(G.memorial.fallen || [])],
+          incidents: (G.memorial.incidents || []).slice(-50)
+        } : { fallen: [], incidents: [] },
         mechanics: {
           morale: G.mechanics.morale,
           defenseRating: G.mechanics.defenseRating,
@@ -103,6 +107,7 @@ export const SaveSystem = {
       if (d.gameMode) G.gameMode = d.gameMode;
       if (d.laws) G.laws = d.laws;
       if (d.research) G.research = d.research;
+      if (d.memorial) G.memorial = d.memorial;
       updateGameModeUI();
 
       if (G.state === 'prologue') {

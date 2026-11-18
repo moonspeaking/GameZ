@@ -16,6 +16,8 @@ import { setSpeed, setToolMode } from '../ui/input.js';
 import { TECH_TREE, isTechResearched, calcDailyScience, progressDailyResearch, startResearch } from '../systems/research.js';
 import { getColonistPerk, COLONIST_PERKS } from '../entities/colonists.js';
 import { SCAVENGE_DESTINATIONS } from '../systems/events.js';
+import { calcColonistMood, pickThought, countBrokenColonists, getMoraleTierLabel, MOOD } from '../systems/morale.js';
+import { killColonist, openMemorialModal, closeMemorialModal } from '../systems/memorial.js';
 
 export async function runTests() {
   console.log('🧪 [TEST RUNNER] Starting Antigravity test suite...');
@@ -200,6 +202,50 @@ export async function runTests() {
       SCAVENGE_DESTINATIONS.every(d => {
         return d.name && typeof d.dangerRate === 'number' && typeof d.rollLoot === 'function';
       }));
+
+    // 16. Morale & Psychology System
+    G.mechanics.morale = 80;
+    G.colonists[0].hp = 100;
+    const moodHopeful = calcColonistMood(G.colonists[0]);
+    assert('Morale: High morale (80) → mood is hopeful', moodHopeful === MOOD.HOPEFUL);
+
+    G.mechanics.morale = 40;
+    const moodStressed = calcColonistMood(G.colonists[0]);
+    assert('Morale: Medium morale (40) → mood is stressed', moodStressed === MOOD.STRESSED);
+
+    G.mechanics.morale = 15;
+    const moodBroken = calcColonistMood(G.colonists[0]);
+    assert('Morale: Low morale (15) → mood is broken', moodBroken === MOOD.BROKEN);
+
+    const thought = pickThought(G.colonists[0]);
+    assert('Morale: pickThought returns non-empty string', typeof thought === 'string' && thought.length > 0);
+
+    G.mechanics.morale = 15;
+    G.colonists.forEach(c => { if (c.status === 'alive') c.mood = MOOD.BROKEN; });
+    const brokenCount = countBrokenColonists();
+    assert('Morale: countBrokenColonists detects broken colonists', brokenCount >= 1);
+
+    const tierLabel = getMoraleTierLabel(85);
+    assert('Morale: getMoraleTierLabel returns label and color',
+      tierLabel.label === 'ПРОЦВЕТАНИЕ' && typeof tierLabel.color === 'string');
+
+    // 17. Memorial System
+    // Add a living test colonist to kill
+    G.colonists.push({
+      id: 'test_victim', name: 'TEST', age: 30, role: 'WORKER',
+      icon: '👤', hp: 1, x: 0, y: 0, status: 'alive', mood: 'stressed', task: '', thought: ''
+    });
+    if (!G.memorial) G.memorial = { fallen: [], incidents: [] };
+    const beforeFallen = G.memorial.fallen.length;
+    killColonist('test_victim', 'Умер во время теста', 42);
+    assert('Memorial: killColonist marks colonist as dead',
+      G.colonists.find(c => c.id === 'test_victim').status === 'dead');
+    assert('Memorial: fallen record added to G.memorial',
+      G.memorial.fallen.length === beforeFallen + 1);
+    const fallen = G.memorial.fallen[G.memorial.fallen.length - 1];
+    assert('Memorial: fallen record has name, cause, epitaph, day',
+      fallen.name === 'TEST' && fallen.cause === 'Умер во время теста' &&
+      typeof fallen.epitaph === 'string' && fallen.day === 42);
 
   } catch (err) {
     failedCount++;

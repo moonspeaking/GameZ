@@ -58,11 +58,17 @@ export function createInitialState() {
 
     // Colonists
     colonists: [
-      { id: 'ray', name: 'RAY', age: 41, role: 'ELEC', color: '#3498db', icon: '⚡', hp: 100, x: 0, y: 0, status: 'alive', task: 'Обслуживание генератора', thought: 'Генератор в порядке. Надо экономить топливо.' },
-      { id: 'nora', name: 'NORA', age: 34, role: 'MED', color: '#e74c3c', icon: '💉', hp: 100, x: 0, y: 0, status: 'alive', task: 'Осмотр запасов медикаментов', thought: 'Главное — не допустить заражения и истощения.' },
-      { id: 'walt', name: 'WALT', age: 47, role: 'ENG', color: '#f1c40f', icon: '⛏️', hp: 100, x: 0, y: 0, status: 'alive', task: 'Планирование шахты', thought: 'Порода здесь крепкая. Будем копать глубже.' },
-      { id: 'eli', name: 'ELI', age: 19, role: 'SCOUT', color: '#2ecc71', icon: '🎒', hp: 100, x: 0, y: 0, status: 'alive', task: 'Разборка коробок с едой', thought: 'Наверху остался целый город... но там орда.' }
+      { id: 'ray', name: 'RAY', age: 41, role: 'ELEC', color: '#3498db', icon: '⚡', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Обслуживание генератора', thought: '«Генератор в порядке. Надо экономить топливо.»' },
+      { id: 'nora', name: 'NORA', age: 34, role: 'MED', color: '#e74c3c', icon: '💉', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Осмотр запасов медикаментов', thought: '«Главное — не допустить заражения.»' },
+      { id: 'walt', name: 'WALT', age: 47, role: 'ENG', color: '#f1c40f', icon: '⛏️', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Планирование шахты', thought: '«Порода здесь крепкая. Будем копать.»' },
+      { id: 'eli', name: 'ELI', age: 19, role: 'SCOUT', color: '#2ecc71', icon: '🎒', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Разборка коробок с едой', thought: '«Наверху остался целый город... но там орда.»' }
     ],
+
+    // Memorial — history of fallen & incidents
+    memorial: {
+      fallen: [],
+      incidents: []
+    },
 
     // World & Architecture
     rooms: [],

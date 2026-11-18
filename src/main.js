@@ -17,6 +17,7 @@ import { handleLawClick } from './systems/laws.js';
 import { setGameMode } from './systems/democracy.js';
 import { launchSurfaceScavenge } from './systems/events.js';
 import { openResearchModal, closeResearchModal, startResearch } from './systems/research.js';
+import { openMemorialModal, closeMemorialModal } from './systems/memorial.js';
 import { SaveSystem } from './systems/save.js';
 import { startLoop } from './core/loop.js';
 
@@ -44,6 +45,8 @@ window.launchSurfaceScavenge = launchSurfaceScavenge;
 window.openResearchModal = openResearchModal;
 window.closeResearchModal = closeResearchModal;
 window.startResearch = startResearch;
+window.openMemorialModal = openMemorialModal;
+window.closeMemorialModal = closeMemorialModal;
 window.sealBulkheads = sealBulkheads;
 window.colonistsFightBreach = colonistsFightBreach;
 window.SaveSystem = SaveSystem;
