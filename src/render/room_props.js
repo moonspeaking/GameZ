@@ -158,6 +158,15 @@ function renderKitchenProps(ctx, r, rx, ry, rw, rh) {
     ctx.arc(tabX + 12 + bi * 14, tabY - 2, 4, 0, Math.PI);
     ctx.fill();
   }
+  // Animated steam rising from kettles
+  const t = Date.now() * 0.003;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  for (let bi = 0; bi < 3; bi++) {
+    const steamY = tabY - 6 - ((t * 8 + bi * 4) % 12);
+    ctx.beginPath();
+    ctx.arc(tabX + 12 + bi * 14 + Math.sin(t * 3 + bi) * 2.5, steamY, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.fillStyle = '#1e272e';
   ctx.fillRect(rx + 12, ry + 12, 34, 18);
   ctx.fillStyle = '#ffffff';
@@ -227,7 +236,8 @@ function renderHydroUvProps(ctx, r, rx, ry, rw, rh) {
   const rackY = ry + rh - 48;
   ctx.fillStyle = '#111';
   ctx.fillRect(rackX, rackY, rw - 16, 46);
-  ctx.fillStyle = 'rgba(155, 89, 182, 0.25)';
+  const uvPulse = 0.22 + Math.sin(Date.now() * 0.003) * 0.08;
+  ctx.fillStyle = `rgba(155, 89, 182, ${uvPulse})`;
   ctx.fillRect(rackX + 4, rackY + 4, rw - 24, 38);
   ctx.fillStyle = '#9b59b6';
   ctx.fillRect(rackX + 4, rackY + 8, rw - 24, 3);
@@ -251,6 +261,14 @@ function renderWorkshopProps(ctx, r, rx, ry, rw, rh) {
   ctx.fillRect(benchX + 22, benchY - 5, 12, 4);
   ctx.fillStyle = '#37474f';
   ctx.fillRect(rx + rw / 2 - 20, ry + 12, 40, 6);
+
+  // Welding sparks animation
+  if (Math.random() < 0.3) {
+    ctx.fillStyle = Math.random() < 0.5 ? '#f1c40f' : '#ffffff';
+    ctx.beginPath();
+    ctx.arc(benchX + 18 + (Math.random() - 0.5) * 10, benchY - 8 + (Math.random() - 0.5) * 6, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 export const ROOM_RENDERERS = {

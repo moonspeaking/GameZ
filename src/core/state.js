@@ -112,7 +112,18 @@ export function createInitialState() {
       powerProduction: 0,
       defenseRating: 10,
       popCap: 8,
-      eventLog: []
+      eventLog: [],
+      foodBonusMultiplier: 1.0,
+      waterDrainMultiplier: 1.0,
+      baseDefenseBonus: 0,
+      miningYieldBonus: 0,
+      newcomerFreqBonus: 1.0
+    },
+
+    research: {
+      currentTechId: null,
+      progress: 0,
+      completed: []
     },
 
     dialogues: [

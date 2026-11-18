@@ -9,6 +9,7 @@ import { completeConstruction } from '../world/rooms.js';
 import { updateColonists, getTotalAlivePop } from '../entities/colonists.js';
 import { updatePrologue } from '../systems/story.js';
 import { render } from '../render/renderer.js';
+import { progressDailyResearch } from '../systems/research.js';
 
 let lastTime = 0;
 let isLoopRunning = false;
@@ -110,6 +111,9 @@ export function onNewDay() {
     }
   }
 
+  // Daily Science & Tech Research Progress
+  progressDailyResearch();
+
   // Autonomous building
   if (G.day > 2 && G.day % 4 === 0) {
     evaluateAutonomousBuilding();
@@ -122,7 +126,8 @@ export function onNewDay() {
   G.mechanics.daysSinceLastEvent++;
   if (G.day >= G.mechanics.nextNewcomerDay && pop < G.mechanics.popCap) {
     triggerNewcomerEvent();
-    G.mechanics.nextNewcomerDay = G.day + 30 + Math.floor(Math.random() * 120);
+    const freqMod = G.mechanics.newcomerFreqBonus || 1.0;
+    G.mechanics.nextNewcomerDay = G.day + Math.floor((30 + Math.random() * 120) * freqMod);
   }
 
   // Natural births

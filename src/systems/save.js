@@ -31,6 +31,11 @@ export const SaveSystem = {
         grid: G.grid,
         gameMode: G.gameMode || 'democracy',
         laws: G.laws ? { ...G.laws } : null,
+        research: G.research ? {
+          currentTechId: G.research.currentTechId,
+          progress: G.research.progress || 0,
+          completed: [...(G.research.completed || [])]
+        } : null,
         mechanics: {
           morale: G.mechanics.morale,
           defenseRating: G.mechanics.defenseRating,
@@ -97,6 +102,7 @@ export const SaveSystem = {
       }
       if (d.gameMode) G.gameMode = d.gameMode;
       if (d.laws) G.laws = d.laws;
+      if (d.research) G.research = d.research;
       updateGameModeUI();
 
       if (G.state === 'prologue') {

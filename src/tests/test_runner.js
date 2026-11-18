@@ -13,6 +13,9 @@ import {
 } from '../systems/story.js';
 import { cycleCamera } from '../render/surveillance.js';
 import { setSpeed, setToolMode } from '../ui/input.js';
+import { TECH_TREE, isTechResearched, calcDailyScience, progressDailyResearch, startResearch } from '../systems/research.js';
+import { getColonistPerk, COLONIST_PERKS } from '../entities/colonists.js';
+import { SCAVENGE_DESTINATIONS } from '../systems/events.js';
 
 export async function runTests() {
   console.log('🧪 [TEST RUNNER] Starting Antigravity test suite...');
@@ -161,6 +164,42 @@ export async function runTests() {
     const loadSuccess = SaveSystem.loadGame();
     assert('SaveSystem: loadGame executes and restores saved state',
       loadSuccess === true && G.day !== 999);
+
+    // 13. Research Tech Tree System
+    assert('Research: Tech tree contains 6 technologies',
+      Array.isArray(TECH_TREE) && TECH_TREE.length === 6);
+
+    setGameMode('overseer');
+    startResearch('uv_accelerators');
+    assert('Research: startResearch sets current active tech',
+      G.research && G.research.currentTechId === 'uv_accelerators');
+
+    const dailySci = calcDailyScience();
+    assert('Research: calcDailyScience yields positive science points',
+      typeof dailySci === 'number' && dailySci >= 1);
+
+    // Fast-forward research completion
+    const uvTech = TECH_TREE.find(t => t.id === 'uv_accelerators');
+    G.research.progress = uvTech.cost - 1;
+    progressDailyResearch();
+    assert('Research: progressDailyResearch completes tech and marks researched',
+      isTechResearched('uv_accelerators') === true && G.research.currentTechId === null);
+    assert('Research: Tech bonus applied to food multiplier',
+      G.mechanics.foodBonusMultiplier >= 1.4);
+
+    // 14. Colonist Perks & Traits
+    const ray = G.colonists.find(c => c.id === 'ray') || G.colonists[0];
+    const perk = getColonistPerk(ray);
+    assert('Colonists: getColonistPerk returns valid trait and description',
+      perk && typeof perk.trait === 'string' && typeof perk.desc === 'string');
+
+    // 15. Surface Scavenge Destinations
+    assert('Expeditions: Exactly 5 tactical scavenge destinations defined',
+      Array.isArray(SCAVENGE_DESTINATIONS) && SCAVENGE_DESTINATIONS.length === 5);
+    assert('Expeditions: Destinations have valid loot and risk configs',
+      SCAVENGE_DESTINATIONS.every(d => {
+        return d.name && typeof d.dangerRate === 'number' && typeof d.rollLoot === 'function';
+      }));
 
   } catch (err) {
     failedCount++;

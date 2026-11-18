@@ -4,6 +4,7 @@ import { CHAPTERS } from '../systems/story.js';
 import { ROOM_CATALOG } from '../world/rooms.js';
 import { updateGameModeUI } from '../systems/democracy.js';
 import { renderWhiteboardLaws } from '../systems/laws.js';
+import { getColonistPerk } from '../entities/colonists.js';
 
 export function openChaptersModal() {
   const grid = document.getElementById('chapters-grid');
@@ -146,6 +147,7 @@ export function toggleBuildMenu(forceOpen) {
 export function showColonistModal(c) {
   const modal = document.getElementById('modal-screen');
   if (!modal) return;
+  const perk = getColonistPerk(c);
   modal.innerHTML = `
     <div style="background:#18181c; border:1px solid #3d3527; border-radius:8px; padding:24px; max-width:440px; width:90%; color:#fff;">
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
@@ -158,7 +160,11 @@ export function showColonistModal(c) {
       <div style="font-size:12px; line-height:1.6; margin-bottom:16px; background:#121214; padding:12px; border-radius:4px;">
         <div><strong>Состояние:</strong> ${c.status === 'dead' ? 'Погиб в шахте' : c.hp + '/100 HP'}</div>
         <div><strong>Занятие:</strong> ${c.task || 'Обустройство убежища'}</div>
-        <div style="margin-top:6px; font-style:italic; color:#e2b765;">"${c.thought || 'Мы должны выжить...'}"</div>
+        <div style="margin-top:6px; padding:6px 8px; background:#24252e; border-left:3px solid var(--accent-gold); border-radius:2px;">
+          <div style="color:var(--accent-gold); font-weight:bold; font-size:11px;">ОСОБЕННОСТЬ: ${perk.trait}</div>
+          <div style="color:#aaa; font-size:10px;">${perk.desc}</div>
+        </div>
+        <div style="margin-top:8px; font-style:italic; color:#e2b765;">"${c.thought || 'Мы должны выжить...'}"</div>
       </div>
       <div style="text-align:right;">
         <button class="modal-btn" id="m-colonist-close">ЗАКРЫТЬ</button>

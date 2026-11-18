@@ -48,7 +48,8 @@ export function handleCanvasAction(canvas, clientX, clientY) {
       if (G.grid[cellR] && G.grid[cellR][cellC] !== C_EXCAVATED && G.grid[cellR][cellC] !== C_BEDROCK) {
         G.grid[cellR][cellC] = C_EXCAVATED;
         eventBus.emit('sound', { type: 'pickaxe' });
-        G.res.materials = (G.res.materials || 0) + 1;
+        const bonus = G.mechanics.miningYieldBonus || 0;
+        G.res.materials = (G.res.materials || 0) + 1 + bonus;
         eventBus.emit('hud_update');
       }
     }

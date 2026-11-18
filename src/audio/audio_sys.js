@@ -121,17 +121,42 @@ export const AudioSys = {
     this.playTone(85, 1.5, 'sine', 0.15);
   },
 
+  playWaterDrop() {
+    this.playTone(1000 + Math.random() * 500, 0.04, 'sine', 0.08);
+  },
+
   toggleMute() {
     this.enabled = !this.enabled;
     eventBus.emit('sound:mute-toggled', this.enabled);
-    eventBus.emit('toast', this.enabled ? '🔊 Звук включен' : '🔇 Звук выключен', 'toast-gold');
+    eventBus.emit('toast', { text: this.enabled ? '🔊 Звук включен' : '🔇 Звук выключен', style: 'toast-gold' });
     return this.enabled;
   }
 };
 
-// Connect to decoupled event bus
-eventBus.on('sound', (soundName, ...args) => {
-  if (typeof AudioSys[soundName] === 'function') {
-    AudioSys[soundName](...args);
+// Connect to decoupled event bus supporting both string and object signatures
+eventBus.on('sound', (arg, ...rest) => {
+  if (typeof arg === 'string') {
+    if (typeof AudioSys[arg] === 'function') {
+      AudioSys[arg](...rest);
+    } else {
+      const fn = 'play' + arg.charAt(0).toUpperCase() + arg.slice(1);
+      if (typeof AudioSys[fn] === 'function') AudioSys[fn](...rest);
+    }
+  } else if (arg && typeof arg === 'object') {
+    const t = arg.type;
+    if (t === 'tone') {
+      AudioSys.playTone(arg.freq || 440, arg.dur || 0.15, arg.wave || 'sine', arg.vol || 0.15);
+    } else if (t === 'pickaxe') {
+      AudioSys.playPickaxeClink();
+    } else if (t === 'metal_clang') {
+      AudioSys.playMetalClang();
+    } else if (t === 'water_drop') {
+      AudioSys.playWaterDrop();
+    } else if (t) {
+      const fn = 'play' + t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+      if (typeof AudioSys[fn] === 'function') {
+        AudioSys[fn](...rest);
+      }
+    }
   }
 });

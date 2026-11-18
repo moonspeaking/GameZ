@@ -329,26 +329,90 @@ export function triggerRandomEvent() {
   }
 }
 
+export const SCAVENGE_DESTINATIONS = [
+  {
+    id: 'food_mart',
+    name: '🏪 Супермаркет «FOOD MART»',
+    desc: 'Запасы консервов, круп и питьевой воды.',
+    risk: 'НИЗКИЙ 🟢',
+    dangerRate: 0.22,
+    rollLoot: () => ({
+      food: 35 + Math.floor(Math.random() * 45),
+      water: 25 + Math.floor(Math.random() * 35),
+      materials: 5 + Math.floor(Math.random() * 10)
+    })
+  },
+  {
+    id: 'pharmacy',
+    name: '💊 Аптека «ЗДОРОВЬЕ»',
+    desc: 'Антибиотики, бинты, антисептики и обезболивающее.',
+    risk: 'СРЕДНИЙ 🟡',
+    dangerRate: 0.35,
+    rollLoot: () => ({
+      med: 15 + Math.floor(Math.random() * 20),
+      food: 10 + Math.floor(Math.random() * 15),
+      water: 10 + Math.floor(Math.random() * 15)
+    })
+  },
+  {
+    id: 'gas_station',
+    name: '⛽ Заправка и Автоколонна',
+    desc: 'Дизель для генераторов, аккумуляторы и металл.',
+    risk: 'СРЕДНИЙ 🟡',
+    dangerRate: 0.38,
+    rollLoot: () => ({
+      fuel: 30 + Math.floor(Math.random() * 50),
+      materials: 20 + Math.floor(Math.random() * 30),
+      ammo: 5 + Math.floor(Math.random() * 10)
+    })
+  },
+  {
+    id: 'police_armory',
+    name: '🎯 Полицейский Арсенал',
+    desc: 'Ящики с патронами, бронежилеты и карабины.',
+    risk: 'ВЫСОКИЙ 🔴',
+    dangerRate: 0.52,
+    rollLoot: () => ({
+      ammo: 35 + Math.floor(Math.random() * 50),
+      materials: 15 + Math.floor(Math.random() * 20),
+      med: 5 + Math.floor(Math.random() * 10)
+    })
+  },
+  {
+    id: 'subway_depot',
+    name: '🚇 Заброшенное Депо Метро',
+    desc: 'Промышленные станки, чертежи и очки науки (+25 🔬).',
+    risk: 'ОЧЕНЬ ВЫСОКИЙ 💀',
+    dangerRate: 0.65,
+    rollLoot: () => ({
+      materials: 40 + Math.floor(Math.random() * 40),
+      fuel: 25 + Math.floor(Math.random() * 30),
+      ammo: 20 + Math.floor(Math.random() * 25),
+      science: 25
+    })
+  }
+];
+
 export function resolveScavenge() {
   const team = G.mechanics.scavengeTeam;
   if (!team || team.length === 0) return;
 
-  const isNight = (G.timeHour >= 21 || G.timeHour < 6);
-  const dangerBase = isNight ? 0.45 : 0.25;
-  const danger = dangerBase - (G.mechanics.defenseRating * 0.005);
+  const destId = G.mechanics.scavengeDestId || 'food_mart';
+  const dest = SCAVENGE_DESTINATIONS.find(d => d.id === destId) || SCAVENGE_DESTINATIONS[0];
 
-  let loot = { food: 0, water: 0, med: 0, ammo: 0, fuel: 0, materials: 0 };
+  const isNight = (G.timeHour >= 21 || G.timeHour < 6);
+  const nightMod = isNight ? 0.2 : 0;
+  const defProtection = (G.mechanics.defenseRating || 15) * 0.004;
+
   let report = [];
+  const loot = dest.rollLoot();
 
   team.forEach(id => {
     const c = G.colonists.find(cc => cc.id === id);
     if (!c || c.status === 'dead') return;
 
-    loot.food += 8 + Math.floor(Math.random() * 25);
-    loot.med += Math.floor(Math.random() * 8);
-    loot.ammo += 5 + Math.floor(Math.random() * 15);
-    loot.fuel += 5 + Math.floor(Math.random() * 20);
-    loot.materials += 3 + Math.floor(Math.random() * 10);
+    let danger = Math.max(0.08, dest.dangerRate + nightMod - defProtection);
+    if (c.role === 'SCOUT' || c.id === 'eli') danger *= 0.5; // Scout avoidance bonus
 
     if (Math.random() < danger) {
       const dmg = 15 + Math.floor(Math.random() * 30);
@@ -364,24 +428,38 @@ export function resolveScavenge() {
     c.task = 'Отдых после вылазки';
   });
 
-  G.res.food += loot.food;
-  G.res.water += loot.water;
-  G.res.med += loot.med;
-  G.res.ammo += loot.ammo;
-  G.res.fuel += loot.fuel;
-  G.res.materials = (G.res.materials || 0) + loot.materials;
+  G.res.food = (G.res.food || 0) + (loot.food || 0);
+  G.res.water = (G.res.water || 0) + (loot.water || 0);
+  G.res.med = (G.res.med || 0) + (loot.med || 0);
+  G.res.ammo = (G.res.ammo || 0) + (loot.ammo || 0);
+  G.res.fuel = (G.res.fuel || 0) + (loot.fuel || 0);
+  G.res.materials = (G.res.materials || 0) + (loot.materials || 0);
 
-  const lootStr = Object.entries(loot).filter(([k, v]) => v > 0).map(([k, v]) => `+${v} ${k}`).join(', ');
-  eventBus.emit('log', `🏙 ВЫЛАЗКА ЗАВЕРШЕНА! ${report.join('. ')}. Добыча: ${lootStr}`);
+  if (loot.science && G.research && G.research.currentTechId) {
+    G.research.progress = (G.research.progress || 0) + loot.science;
+  }
+
+  const lootParts = [];
+  if (loot.food) lootParts.push(`+${loot.food} еды`);
+  if (loot.water) lootParts.push(`+${loot.water} воды`);
+  if (loot.med) lootParts.push(`+${loot.med} медикаментов`);
+  if (loot.ammo) lootParts.push(`+${loot.ammo} патронов`);
+  if (loot.fuel) lootParts.push(`+${loot.fuel} топлива`);
+  if (loot.materials) lootParts.push(`+${loot.materials} материалов`);
+  if (loot.science) lootParts.push(`+${loot.science} науки`);
+
+  const lootStr = lootParts.join(', ');
+  eventBus.emit('log', `🏙 ВЫЛАЗКА В «${dest.name}» ЗАВЕРШЕНА! ${report.join('. ')}. Добыча: ${lootStr}`);
   eventBus.emit('sound', { type: 'good' });
 
   G.mechanics.scavengeTeam = [];
   G.mechanics.scavengeReturning = false;
+  G.mechanics.scavengeDestId = null;
   eventBus.emit('hud_update');
 }
 
 export function launchSurfaceScavenge() {
-  if (G.mechanics.scavengeTeam.length > 0) {
+  if (G.mechanics.scavengeTeam && G.mechanics.scavengeTeam.length > 0) {
     eventBus.emit('log', '⚠ Команда уже на поверхности! Дождитесь возвращения.');
     eventBus.emit('sound', { type: 'bad' });
     return;
@@ -397,26 +475,51 @@ export function launchSurfaceScavenge() {
   const modal = document.getElementById('modal-screen');
   if (!modal) return;
   const isNight = (G.timeHour >= 21 || G.timeHour < 6);
-  const dangerLevel = isNight ? 'ВЫСОКИЙ 🔴' : 'СРЕДНИЙ 🟡';
+
+  let destHtml = SCAVENGE_DESTINATIONS.map((d, i) => `
+    <label style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#181920; border:1px solid #3d3527; border-radius:6px; cursor:pointer; margin:4px 0;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="radio" name="scav-dest" value="${d.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#d4af37;">
+        <div>
+          <div style="color:#fff; font-weight:bold; font-size:12px;">${d.name}</div>
+          <div style="color:#888; font-size:10px;">${d.desc}</div>
+        </div>
+      </div>
+      <span style="font-size:10px; font-weight:bold; padding:2px 6px; border-radius:3px; background:#222; color:#d4af37;">${d.risk}</span>
+    </label>
+  `).join('');
 
   let teamHtml = alive.map(c => `
     <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#1a1a1f; border-radius:6px; cursor:pointer; margin:3px 0;">
       <input type="checkbox" class="scav-check" value="${c.id}" style="accent-color:#d4af37;">
       <span style="font-size:18px;">${c.icon}</span>
-      <span style="color:#e8d5b7; font-size:13px;">${c.name} (${c.role}) HP:${c.hp}</span>
+      <span style="color:#e8d5b7; font-size:12px;">${c.name} (${c.role}) HP:${c.hp}</span>
     </label>
   `).join('');
 
   modal.innerHTML = `
-    <h1 style="color:var(--accent-gold); font-size:28px; margin-bottom:10px;">🏙 ВЫЛАЗКА НА ПОВЕРХНОСТЬ</h1>
-    <p style="color:#9a8b7a; font-size:13px; margin-bottom:6px;">Опасность: ${dangerLevel} ${isNight ? '(НОЧЬ)' : '(ДЕНЬ)'}</p>
-    <p style="color:#7a6b5a; font-size:12px; margin-bottom:14px;">Выберите 1-3 колонистов для экспедиции (1-3 дня). Они могут найти еду, медикаменты, патроны, топливо.</p>
-    <div style="max-height:220px; overflow-y:auto; margin-bottom:16px; width:300px;">
-      ${teamHtml}
-    </div>
-    <div style="display:flex; gap:12px;">
-      <button class="modal-btn" id="m-btn-1">ОТПРАВИТЬ</button>
-      <button class="modal-btn" style="background:#333; color:#fff;" id="m-btn-2">ОТМЕНА</button>
+    <div style="background:#14151a; border:1px solid var(--accent-gold); border-radius:8px; padding:20px; max-width:540px; width:92%; max-height:88vh; overflow-y:auto; color:#fff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:12px;">
+        <h2 style="color:var(--accent-gold); font-size:20px; margin:0;">🏙 ВЫЛАЗКА НА ПОВЕРХНОСТЬ</h2>
+        <span style="font-size:11px; color:${isNight ? '#e74c3c' : '#f1c40f'}; font-weight:bold;">${isNight ? '🌙 НОЧЬ (ПОВЫШЕННЫЙ РИСК)' : '☀️ ДЕНЬ'}</span>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:bold; font-size:12px; color:var(--accent-gold); margin-bottom:6px;">1. ВЫБЕРИТЕ ТОЧКУ НАЗНАЧЕНИЯ:</div>
+        ${destHtml}
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:bold; font-size:12px; color:var(--accent-gold); margin-bottom:6px;">2. ВЫБЕРИТЕ ОТРЯД (1–3 ВЫЖИВШИХ):</div>
+        <div style="max-height:140px; overflow-y:auto; border:1px solid #333; border-radius:6px; padding:4px;">
+          ${teamHtml}
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button class="modal-btn" id="m-btn-1" style="background:#27ae60; color:#fff;">ОТПРАВИТЬ ОТРЯД ▶</button>
+        <button class="modal-btn" style="background:#333; color:#fff;" id="m-btn-2">ОТМЕНА</button>
+      </div>
     </div>
   `;
   modal.style.display = 'flex';
@@ -429,10 +532,14 @@ export function launchSurfaceScavenge() {
       const checked = [...document.querySelectorAll('.scav-check:checked')].map(cb => cb.value);
       if (checked.length === 0 || checked.length > 3) {
         eventBus.emit('log', '⚠ Выберите от 1 до 3 колонистов!');
+        eventBus.emit('toast', { text: '⚠ Выберите от 1 до 3 колонистов!', style: 'toast-bad' });
         return;
       }
+      const selDest = document.querySelector('input[name="scav-dest"]:checked')?.value || 'food_mart';
+
       modal.style.display = 'none';
       G.mechanics.scavengeTeam = checked;
+      G.mechanics.scavengeDestId = selDest;
       G.mechanics.scavengeDayLeft = 1 + Math.floor(Math.random() * 3);
 
       checked.forEach(id => {
@@ -440,7 +547,9 @@ export function launchSurfaceScavenge() {
         if (c) c.task = 'Вылазка на поверхность';
       });
 
-      eventBus.emit('log', `🏙 ВЫЛАЗКА: ${checked.map(id => G.colonists.find(c => c.id === id)?.name).join(', ')} ушли наверх (≈${G.mechanics.scavengeDayLeft} дн.)`);
+      const destObj = SCAVENGE_DESTINATIONS.find(d => d.id === selDest);
+      eventBus.emit('log', `🏙 ВЫЛАЗКА: Отряд (${checked.map(id => G.colonists.find(c => c.id === id)?.name).join(', ')}) выдвинулся в «${destObj?.name}» (≈${G.mechanics.scavengeDayLeft} дн.)`);
+      eventBus.emit('toast', { text: `🏙 Отряд отправился в «${destObj?.name}»!`, style: 'toast-gold' });
       eventBus.emit('sound', { type: 'alert' });
       eventBus.emit('hud_update');
     };
