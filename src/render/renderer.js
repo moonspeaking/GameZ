@@ -1,0 +1,120 @@
+import { G } from '../core/state.js';
+import { CELL_SIZE, SURFACE_Y } from '../core/constants.js';
+import { eventBus } from '../core/event_bus.js';
+import { drawSurfaceWorld, drawRunningSurvivor, drawSpeechBubble, drawZombiePile } from './surface.js';
+import { drawTerrain, drawCentralConcreteShaft } from './underground.js';
+import { drawRooms } from './room_props.js';
+import { drawBlueprints, drawInteractivePlacementOverlay } from './placement_overlay.js';
+import { drawColonists } from './colonist_sprites.js';
+import { updateSurveillanceFeed } from './surveillance.js';
+
+let canvas = null;
+let ctx = null;
+let W = 1200;
+let H = 700;
+
+export function resizeCanvas() {
+  if (!canvas) return;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+}
+
+export function initRenderer(cvs) {
+  canvas = cvs;
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  eventBus.on('canvas_resize', resizeCanvas);
+  eventBus.on('render_request', render);
+}
+
+function renderPrologue() {
+  const t = G.prologue.t;
+  const hatchX = G.prologue.hatchX;
+  const skyH = SURFACE_Y * CELL_SIZE;
+
+  ctx.save();
+  if (G.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
+  }
+  ctx.translate(-Math.floor(G.cam.x), -Math.floor(G.cam.y));
+
+  drawSurfaceWorld(ctx, G);
+  drawTerrain(ctx, G);
+  drawCentralConcreteShaft(ctx, G);
+  drawRooms(ctx, G);
+
+  if (t < 8500) {
+    const p = Math.min(1, t / 7000);
+    const eliX = 140 + p * (hatchX - 130);
+    const noraX = 100 + p * (hatchX - 100);
+    const waltX = 70 + p * (hatchX - 70);
+    const rayX = 35 + p * (hatchX - 40);
+    const groundY = skyH - 2;
+
+    drawRunningSurvivor(ctx, eliX, groundY, '#2ecc71', 'ELI', t < 7200);
+    drawRunningSurvivor(ctx, noraX, groundY, '#e74c3c', 'NORA', t < 7600);
+    drawRunningSurvivor(ctx, waltX, groundY, '#f1c40f', 'WALT', t < 8400);
+    drawRunningSurvivor(ctx, rayX, groundY, '#3498db', 'RAY', t < 8000);
+
+    if (t > 1000 && t < 4500) {
+      drawSpeechBubble(ctx, eliX, groundY - 32, 'GO! GO!');
+    } else if (t >= 4500 && t < 7000) {
+      drawSpeechBubble(ctx, waltX, groundY - 32, 'KEEP RUNNING!');
+    } else if (t >= 7000 && t < 8500) {
+      drawSpeechBubble(ctx, waltX, groundY - 32, 'Down, down, down!');
+    }
+  }
+
+  const hordeLeadX = (t < 7500)
+    ? (t / 7000) * (hatchX - 100) - 70
+    : hatchX - 25;
+
+  drawZombiePile(ctx, hordeLeadX, skyH, t >= 8500);
+  ctx.restore();
+}
+
+export function render() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, W, H);
+
+  if (G.state === 'prologue') {
+    renderPrologue();
+    return;
+  }
+
+  ctx.save();
+  if (G.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
+  }
+  ctx.translate(-Math.floor(G.cam.x), -Math.floor(G.cam.y));
+
+  drawSurfaceWorld(ctx, G);
+  drawTerrain(ctx, G);
+  drawCentralConcreteShaft(ctx, G);
+  drawRooms(ctx, G);
+  drawBlueprints(ctx, G);
+  drawInteractivePlacementOverlay(ctx, G);
+  drawColonists(ctx, G);
+
+  // Particles
+  G.particles.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // Snowflakes
+  if (G.isWinterSnow) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    G.snowflakes.forEach(s => {
+      ctx.beginPath(); ctx.arc(s.x, s.y, 1.8, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  ctx.restore();
+
+  updateSurveillanceFeed(G);
+}

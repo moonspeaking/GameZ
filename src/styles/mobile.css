@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════════
+   INTERACTIVE BANNER & TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════════════════════════ */
+#placement-banner {
+  position: fixed;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 24, 30, 0.96);
+  border: 1px solid var(--accent-gold);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 150;
+  animation: pulseBanner 2s infinite alternate;
+}
+@keyframes pulseBanner {
+  from { box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+  to { box-shadow: 0 0 22px rgba(212, 175, 55, 0.8); }
+}
+
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 999;
+  pointer-events: none;
+  max-width: 90vw;
+}
+.toast {
+  background: rgba(18, 18, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f0f0f5;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: auto;
+}
+.toast.toast-gold { border-color: var(--accent-gold); color: #fff; }
+.toast.toast-bad { border-color: #e74c3c; color: #ff9999; }
+.toast.toast-good { border-color: #2ecc71; color: #aaffaa; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS & TOUCH ADAPTATION
+   ═══════════════════════════════════════════════════════════════════ */
+#mobile-hud-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 160;
+  background: rgba(20, 20, 26, 0.95);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  touch-action: manipulation;
+}
+
+@media (max-width: 900px) {
+  #mobile-hud-btn { display: block; }
+  #sidebar-hud {
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    width: min(320px, 86vw) !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
+  #sidebar-hud.mobile-open {
+    transform: translateX(0) !important;
+  }
+  #dialogue-card {
+    max-width: 85vw;
+    top: auto;
+    bottom: 155px;
+    left: 12px;
+  }
+  #surveillance-cam {
+    width: 140px;
+    height: 90px;
+    bottom: 12px;
+    left: 12px;
+  }
+  #surveillance-cam canvas {
+    width: 140px;
+    height: 60px;
+  }
+  .flt-btn {
+    padding: 7px 11px;
+    font-size: 11px;
+    min-height: 36px;
+  }
+  #top-day-pill {
+    top: 8px;
+    font-size: 10px;
+    padding: 4px 12px;
+  }
+  #placement-banner {
+    width: 92vw;
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+}

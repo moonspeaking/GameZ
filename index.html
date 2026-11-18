@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>30 Лет Под Землей — Симулятор Колонии Выживших</title>
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/hud.css">
+<link rel="stylesheet" href="src/styles/modals.css">
+<link rel="stylesheet" href="src/styles/mobile.css">
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- Mobile HUD Toggle Button -->
+<button id="mobile-hud-btn" onclick="toggleMobileHUD()">📋 МЕНЮ</button>
+
+<!-- Placement Guide Banner for Interactive Construction -->
+<div id="placement-banner" style="display:none;">
+  <span id="pb-text">🔨 Выберите место для размещения комнаты (клик в шахте)</span>
+  <button onclick="cancelPlacement()" style="background:#e74c3c; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-weight:bold; cursor:pointer;">✕ ОТМЕНА (ESC)</button>
+</div>
+
+<!-- Toast Notifications Container -->
+<div id="toast-container"></div>
+
+<!-- Top Day Pill -->
+<div id="top-day-pill">
+  <span class="pill-clock">⏱</span>
+  <span id="pill-title">DAY 1 · THE OUTBREAK</span>
+</div>
+
+<!-- Dialogue Card Top-Left -->
+<div id="dialogue-card">
+  <div class="dlg-avatar" id="dlg-avatar">⚡</div>
+  <div class="dlg-content">
+    <div class="dlg-name" id="dlg-name">RAY</div>
+    <div class="dlg-text" id="dlg-text">"Ray. Electrician. The generator works."</div>
+  </div>
+</div>
+
+<!-- Journal Note Inset -->
+<div id="journal-note" onclick="this.style.display='none'">
+  <div class="jn-header">
+    <span id="jn-day">Day 1</span>
+    <span>JOURNAL</span>
+  </div>
+  <div class="jn-body" id="jn-body">
+    "A concrete room built for twenty. Four of us. We don't know each other's last names."
+  </div>
+  <div class="jn-sig" id="jn-sig">- NORA</div>
+</div>
+
+<!-- Whiteboard Inset -->
+<div id="whiteboard-inset" onclick="this.style.display='none'">
+  <h3>RULES</h3>
+  <ol>
+    <li>48 HOURS OF QUARANTINE FOR NEWCOMERS</li>
+    <li>ONE RATION CARD EACH. NO WORK, NO SECOND BOWL</li>
+  </ol>
+</div>
+
+<!-- Ration Card Inset -->
+<div id="ration-card-inset" onclick="this.style.display='none'">
+  <div class="rc-title">RATION CARD</div>
+  <div class="rc-row"><span>No. 0144</span><span>WEEK 1</span></div>
+  <div class="rc-row"><span>NAME: TOBY REYES</span></div>
+  <div class="rc-row" style="color:#c0392b; font-weight:bold;">1 MEAL / DAY · WATER 2 L</div>
+  <div class="rc-stamps">
+    <span class="rc-stamp">MON: OK</span>
+    <span class="rc-stamp">TUE: OK</span>
+    <span class="rc-stamp">WED: OK</span>
+  </div>
+</div>
+
+<!-- Council Vote Inset -->
+<div id="council-vote-inset" onclick="this.style.display='none'">
+  <div class="cv-header"><span>⚖ COUNCIL</span><span>9 VOTERS</span></div>
+  <div class="cv-prompt">Open the old subway for its steel?</div>
+  <div class="cv-bar-wrap"><div class="cv-bar-fill"></div></div>
+  <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>YES: 8</span><span>NO: 1</span></div>
+</div>
+
+<!-- Below Radio Broadcast Inset -->
+<div id="radio-broadcast-inset" onclick="this.style.display='none'">
+  <span class="rb-tag">BELOW RADIO · ON AIR</span>
+  <div class="rb-speaker">MARCUS</div>
+  <div class="rb-text">"The council is suspended. Until this city is safe, the Security Council governs."</div>
+</div>
+
+<!-- Surveillance Camera CRT Inset -->
+<div id="surveillance-cam" onclick="cycleCamera()" title="Кликните для переключения камеры наблюдения">
+  <div class="cam-top-bar">
+    <span class="cam-rec">🔴 REC</span>
+    <span class="cam-timer" id="cam-timer">00:00:04</span>
+  </div>
+  <canvas id="cam-feed-canvas" width="230" height="140"></canvas>
+  <div class="cam-bottom-bar">
+    <span id="cam-name">CAM 1 · HATCH YARD</span>
+    <span id="cam-day">DAY 1</span>
+  </div>
+</div>
+
+<!-- Skip Prologue Button -->
+<button id="prologue-skip-btn" onclick="finishPrologue()">СПУСТИТЬСЯ В ШАХТУ ▶ (Пробел)</button>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     AUTHENTIC RIGHT SIDEBAR HUD
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="sidebar-hud">
+  <!-- Header: Year & Day + Time Clock -->
+  <div class="sb-header">
+    <div>
+      <div class="sb-year" id="sb-year-text">YEAR 1</div>
+      <div class="sb-day" id="sb-day-text">DAY 1</div>
+    </div>
+    <div class="sb-time-wrap">
+      <span class="sb-time-icon" id="sb-time-icon">☀️</span>
+      <span class="sb-time-clock" id="sb-time-clock">12:00</span>
+    </div>
+  </div>
+
+  <!-- Population & SVG Growth Curve Graph -->
+  <div class="sb-pop-row">
+    <div>
+      <div class="sb-pop-label">POPULATION</div>
+      <div class="sb-pop-num" id="sb-pop-val">4</div>
+    </div>
+    <div class="sb-pop-chart">
+      <svg viewBox="0 0 130 38">
+        <path class="sb-chart-line" id="sb-chart-path" d="M0,34 L20,34 L40,32 L60,32 L80,26 L100,16 L120,12 L130,4"></path>
+      </svg>
+      <span class="sb-status-pill" id="sb-status-pill">📍 SURFACE RESTLESS</span>
+    </div>
+  </div>
+
+  <!-- Controls inside Sidebar HUD -->
+  <div class="sb-section" style="padding: 6px 12px; background: #18191d; border-bottom: 1px solid #28292e;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+      <button class="flt-btn" onclick="openChaptersModal()" style="padding: 4px 6px; font-size: 10px; background: #2a2b30; color: var(--accent-gold); border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer;">⏳ ГЛАВЫ ▼</button>
+      <button class="flt-btn" id="btn-mode-indicator" onclick="openGameModeModal()" style="padding: 4px 8px; font-size: 10px; background: #16241a; color: #2ecc71; border: 1px solid #27ae60; border-radius: 4px; font-weight: bold; cursor: pointer;">🏛️ ДЕМОКРАТИЯ ▼</button>
+      <div style="display:flex; gap: 4px;">
+        <button class="flt-btn active" onclick="setSpeed(1)" id="flt-1x" style="padding: 3px 6px; font-size: 10px; background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; cursor: pointer;">1x</button>
+        <button class="flt-btn" onclick="setSpeed(2)" id="flt-2x" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">2x</button>
+        <button class="flt-btn" onclick="setSpeed(5)" id="flt-5x" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">5x</button>
+        <button class="flt-btn" onclick="setSpeed(30)" id="flt-30x" style="padding: 3px 6px; font-size: 10px; background: #222; color: var(--accent-gold); border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer;">⚡30x</button>
+        <button class="flt-btn" onclick="setSpeed(0)" id="flt-p" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">⏸</button>
+      </div>
+    </div>
+    <div style="display:flex; gap: 4px; justify-content:space-between; flex-wrap:wrap;">
+      <button onclick="toggleBuildMenu()" id="btn-tool-build" style="flex:1; min-width:48px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;">🏗️ Строить</button>
+      <button onclick="setToolMode('dig')" id="btn-tool-dig" style="flex:1; min-width:48px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;">⛏️ Копать</button>
+      <button onclick="setToolMode('demolish')" id="btn-tool-demo" style="flex:1; min-width:44px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e74c3c; border: 1px solid #5c2828; border-radius: 3px; cursor: pointer;">💥 Снос</button>
+      <button onclick="openWhiteboardModal()" id="btn-whiteboard-rules" style="flex:1; min-width:54px; padding: 4px 0; font-size: 10px; background: #3a3225; color: #f1c40f; border: 1px solid #8d6e3f; border-radius: 3px; cursor: pointer; font-weight:bold;">📋 Законы</button>
+      <button onclick="launchSurfaceScavenge()" id="btn-tool-scav" style="flex:1.2; min-width:62px; padding: 4px 0; font-size: 10px; background: #2d1e3a; color: #d4a5ff; border: 1px solid #6b3e8a; border-radius: 3px; cursor: pointer; font-weight:bold;">🏙 Вылазка</button>
+    </div>
+    <!-- LocalStorage Save System Buttons -->
+    <div style="display:flex; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #222;">
+      <button onclick="SaveSystem.saveGame(false)" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 3px; cursor: pointer; font-weight: bold;">💾 Сохранить</button>
+      <button onclick="SaveSystem.loadGame()" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #34d399; border: 1px solid #059669; border-radius: 3px; cursor: pointer; font-weight: bold;">📂 Загрузить</button>
+      <button onclick="SaveSystem.resetGame()" style="flex:0.6; padding: 4px 0; font-size: 10px; background: #291e1e; color: #f87171; border: 1px solid #b91c1c; border-radius: 3px; cursor: pointer;">🔄 Сброс</button>
+      <span id="sb-save-time" style="font-size:9px; color:#666; align-self:center; margin-left:4px;">Авто</span>
+    </div>
+  </div>
+
+  <!-- Primary Supplies Section -->
+  <div class="sb-section">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">SUPPLIES</span>
+      <span class="sb-sec-badge" id="sb-morale-val">85%</span>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">🍞</span> FOOD (CANS)</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-food" id="bar-food" style="width:90%;"></div></div>
+        <div class="sb-sup-val" id="val-food">90</div>
+      </div>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">💧</span> WATER (WELL)</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-water" id="bar-water" style="width:100%;"></div></div>
+        <div class="sb-sup-val" id="val-water">150</div>
+      </div>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">⚡</span> POWER (GRID)</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-power" id="bar-power" style="width:100%;"></div></div>
+        <div class="sb-sup-val" id="val-power">100%</div>
+      </div>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">⛽</span> FUEL (L)</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-fuel" id="bar-fuel" style="width:80%;"></div></div>
+        <div class="sb-sup-val" id="val-fuel">244</div>
+      </div>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">💉</span> MEDS</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-med" id="bar-med" style="width:50%;"></div></div>
+        <div class="sb-sup-val" id="val-med">10</div>
+      </div>
+    </div>
+
+    <div class="sb-sup-item">
+      <div class="sb-sup-row">
+        <span class="sb-sup-label"><span class="sb-sup-icon">🎯</span> AMMO</span>
+        <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-ammo" id="bar-ammo" style="width:50%;"></div></div>
+        <div class="sb-sup-val" id="val-ammo">74</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Construction -->
+  <div class="sb-section">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">CONSTRUCTION</span>
+      <span class="sb-sec-badge" id="sb-const-count">1 PROJECTS</span>
+    </div>
+    <div class="sb-const-status">
+      <span style="display:flex; align-items:center; gap:6px;">
+        <span id="sb-const-icon">🌱</span>
+        <span class="sb-const-name" id="sb-const-name">MUSHROOMS</span>
+      </span>
+      <span class="sb-const-action" onclick="toggleBuildMenu()">PLAN</span>
+    </div>
+  </div>
+
+  <!-- Work Roles -->
+  <div class="sb-section">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">WORK</span>
+    </div>
+    <div class="sb-work-bars" id="sb-work-bars">
+      <div class="sb-work-col">
+        <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
+        <span>1 DIR</span>
+      </div>
+      <div class="sb-work-col">
+        <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
+        <span>1 TECH</span>
+      </div>
+      <div class="sb-work-col">
+        <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
+        <span>1 MED</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- People 2x2 Grid -->
+  <div class="sb-section">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">PEOPLE</span>
+    </div>
+    <div class="sb-people-grid" id="sb-people-grid">
+      <!-- Generated via JS -->
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="sb-section sb-log-sec">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">LOG</span>
+    </div>
+    <div class="sb-log-list" id="sb-log-list">
+      <div class="sb-log-entry"><span class="sb-log-day">D1</span> FOUR STRANGERS REACH THE OLD SHELTER</div>
+    </div>
+  </div>
+
+  <!-- Cross-Section Minimap -->
+  <div class="sb-section sb-minimap-sec">
+    <div class="sb-sec-header">
+      <span class="sb-sec-title">CROSS-SECTION</span>
+      <span class="sb-sec-badge" id="sb-depth-val">-75 M</span>
+    </div>
+    <div class="sb-minimap-container" id="sb-minimap-box">
+      <canvas id="sb-minimap-canvas" width="260" height="72"></canvas>
+      <div id="sb-minimap-viewport"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Red Alert Overlay for The Breach -->
+<div id="red-alert-overlay"></div>
+<div id="breach-banner">
+  <span>🚨 ПРОРЫВ В ШАХТЕ! ОРДА В ВЕРХНЕМ СЕКТОРЕ!</span>
+  <button onclick="sealBulkheads()" style="padding:6px 16px; background:#fff; color:#c0392b; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">ЗАПЕРЕТЬ БРОНЕШЛЮЗЫ</button>
+  <button onclick="colonistsFightBreach()" style="padding:6px 16px; background:#2c3e50; color:#fff; border:1px solid #fff; border-radius:4px; font-weight:bold; cursor:pointer;">АТАКОВАТЬ ОРДУ</button>
+</div>
+
+<!-- Modal Screen (Decisions, Game Over, Victory) -->
+<div id="modal-screen">
+  <h1 id="modal-title">КОЛОНИЯ ПАЛА</h1>
+  <p id="modal-desc"></p>
+  <button class="modal-btn" onclick="location.reload()">НАЧАТЬ ЗАНОВО</button>
+</div>
+
+<!-- Chapters Timeline Modal (10 Chapters) -->
+<div id="chapters-modal">
+  <div class="ch-modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #3d3527; padding-bottom:12px;">
+      <h2 style="color:var(--accent-gold); font-size:20px; letter-spacing:1px; margin:0; display:flex; align-items:center; gap:8px;">
+        <span>⏳</span> ХРОНОЛОГИЯ 30 ЛЕТ: ГОРОД ПОД ОРДОЙ ЗОМБИ
+      </h2>
+      <button onclick="closeChaptersModal()" style="background:none; border:none; color:#cfbfad; font-size:24px; cursor:pointer;">✕</button>
+    </div>
+    <p style="color:var(--text-muted); font-size:12px; margin-top:8px;">
+      10 глав из оригинального видео SquareUp. Выберите любую главу для перехода в соответствующую эпоху:
+    </p>
+    <div class="ch-grid" id="chapters-grid"></div>
+  </div>
+</div>
+
+<!-- Build Menu Modal -->
+<div id="build-modal">
+  <div class="bm-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px;">
+      <h3 style="color:var(--accent-gold); margin:0;">ПЛАНИРОВАНИЕ КОМНАТЫ</h3>
+      <button onclick="toggleBuildMenu()" style="background:none; border:none; color:#bbb; font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <div class="bm-list" id="bm-list"></div>
+  </div>
+</div>
+
+<!-- GAME MODE SELECTION MODAL -->
+<div id="gamemode-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:210; justify-content:center; align-items:center;">
+  <div style="background:#141418; border:1px solid var(--accent-gold); border-radius:8px; padding:22px; max-width:560px; width:92%; box-shadow:0 8px 30px rgba(0,0,0,0.9);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:12px;">
+      <h2 style="color:var(--accent-gold); font-size:19px; margin:0; display:flex; align-items:center; gap:8px;">
+        <span>⚖️</span> РЕЖИМ ПРАВЛЕНИЯ В БУНКЕРЕ
+      </h2>
+      <button onclick="closeGameModeModal()" style="background:none; border:none; color:#cfbfad; font-size:24px; cursor:pointer;">✕</button>
+    </div>
+    <p style="color:#aaa; font-size:12px; margin:10px 0 16px;">
+      Выберите форму правления колонией. Режим определяет, кто строит комнаты, голосует за законы и разрешает кризисы:
+    </p>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Democracy Card -->
+      <div class="gm-card" id="gm-card-democracy" onclick="setGameMode('democracy')" style="background:#1b1d24; border:2px solid #2ecc71; border-radius:6px; padding:12px 16px; cursor:pointer; transition:all 0.2s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="color:#2ecc71; font-weight:bold; font-size:14px;">🏛️ ДЕМОКРАТИЯ (СОВЕТ КОЛОНИИ)</span>
+          <span class="gm-badge" id="gm-badge-democracy" style="background:#2ecc71; color:#000; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px;">АКТИВЕН</span>
+        </div>
+        <p style="color:#cfcfd6; font-size:12px; margin:0; line-height:1.4;">
+          <strong>Герои сами строят и принимают решения!</strong> Совет колонистов собирается для голосования по законам, распределению пайков, обороне и автономному строительству нужных комнат. Игрок голосует наравне со всеми.
+        </p>
+      </div>
+
+      <!-- Overseer Card -->
+      <div class="gm-card" id="gm-card-overseer" onclick="setGameMode('overseer')" style="background:#1b1d24; border:1px solid #444; border-radius:6px; padding:12px 16px; cursor:pointer; transition:all 0.2s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="color:#e67e22; font-weight:bold; font-size:14px;">👑 КОМЕНДАНТ (ПРЯМОЕ УПРАВЛЕНИЕ)</span>
+          <span class="gm-badge" id="gm-badge-overseer" style="display:none; background:#e67e22; color:#000; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px;">АКТИВЕН</span>
+        </div>
+        <p style="color:#aaa; font-size:12px; margin:0; line-height:1.4;">
+          <strong>Единоличная власть игрока.</strong> Стройте только по своему усмотрению, принимайте законы прямыми декретами, дилеммы разрешаются без голосований жителей.
+        </p>
+      </div>
+
+      <!-- Anarchy Card -->
+      <div class="gm-card" id="gm-card-anarchy" onclick="setGameMode('anarchy')" style="background:#1b1d24; border:1px solid #444; border-radius:6px; padding:12px 16px; cursor:pointer; transition:all 0.2s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="color:#e74c3c; font-weight:bold; font-size:14px;">⚡ АНАРХИЯ (СВОБОДНАЯ ВОЛЯ)</span>
+          <span class="gm-badge" id="gm-badge-anarchy" style="display:none; background:#e74c3c; color:#fff; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px;">АКТИВЕН</span>
+        </div>
+        <p style="color:#aaa; font-size:12px; margin:0; line-height:1.4;">
+          <strong>Никаких законов и запретов.</strong> Колонисты действуют спонтанно: сами копают где вздумается, тратят провизию и строят по импульсу. Экстремальный хаос.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE COUNCIL VOTING CHAMBER MODAL -->
+<div id="council-vote-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:220; justify-content:center; align-items:center;">
+  <div style="background:#14151a; border:2px solid #2ecc71; border-radius:8px; padding:20px 24px; max-width:580px; width:92%; box-shadow:0 10px 40px rgba(0,0,0,0.95);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #282a33; padding-bottom:10px; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:22px;">🏛️</span>
+        <div>
+          <h2 style="color:var(--accent-gold); font-size:17px; margin:0; letter-spacing:1px;" id="cv-title">СОВЕТ КОЛОНИИ: ГОЛОСОВАНИЕ</h2>
+          <span style="color:#888; font-size:11px;" id="cv-subtitle">ДЕМОКРАТИЧЕСКАЯ АССАМБЛЕЯ ВЫЖИВШИХ</span>
+        </div>
+      </div>
+      <span id="cv-voters-count" style="background:#222; color:#2ecc71; font-size:11px; font-weight:bold; padding:3px 8px; border-radius:4px; border:1px solid #333;">4 голоса</span>
+    </div>
+
+    <!-- Issue text -->
+    <div style="background:#1b1c22; border-left:4px solid var(--accent-gold); padding:10px 14px; margin-bottom:12px; border-radius:0 6px 6px 0;">
+      <div style="color:#fff; font-size:13px; font-weight:600; line-height:1.4;" id="cv-prompt-text">Повестка дня...</div>
+      <div style="color:#aaa; font-size:11px; margin-top:4px;" id="cv-desc-text">Описание последствий...</div>
+    </div>
+
+    <!-- Voters list & quotes -->
+    <div style="max-height:170px; overflow-y:auto; margin-bottom:14px; display:flex; flex-direction:column; gap:6px;" id="cv-voters-list"></div>
+
+    <!-- Live Vote Progress Bar -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:4px;">
+        <span style="color:#2ecc71;" id="cv-yes-label">ЗА: 0</span>
+        <span style="color:#e74c3c;" id="cv-no-label">ПРОТИВ: 0</span>
+      </div>
+      <div style="height:12px; background:#222; border-radius:6px; overflow:hidden; display:flex; border:1px solid #444;">
+        <div id="cv-bar-yes" style="height:100%; width:50%; background:#2ecc71; transition:width 0.3s ease;"></div>
+        <div id="cv-bar-no" style="height:100%; width:50%; background:#e74c3c; transition:width 0.3s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex; gap:10px; justify-content:flex-end;" id="cv-actions">
+      <button class="modal-btn" id="cv-btn-opt-a" style="background:#27ae60; color:#fff; font-size:12px; padding:9px 16px; border-radius:5px; cursor:pointer;">👍 ГОЛОСУЮ ЗА</button>
+      <button class="modal-btn" id="cv-btn-opt-b" style="background:#c0392b; color:#fff; font-size:12px; padding:9px 16px; border-radius:5px; cursor:pointer;">👎 ГОЛОСУЮ ПРОТИВ</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE WHITEBOARD LAWS MODAL -->
+<div id="whiteboard-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:215; justify-content:center; align-items:center;">
+  <div style="background:#ffffff; color:#1a1917; border:5px solid #a89f91; border-radius:6px; padding:22px; max-width:600px; width:92%; box-shadow:0 10px 40px rgba(0,0,0,0.9); font-family:'Courier New', monospace;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px dashed #999; padding-bottom:8px; margin-bottom:12px;">
+      <div>
+        <h2 style="color:#c0392b; font-size:20px; margin:0; text-decoration:underline;">RULES & DIRECTIVES</h2>
+        <span id="wb-mode-status" style="font-size:11px; color:#555; font-weight:bold;">РЕЖИМ: ДЕМОКРАТИЯ (Законы принимаются Советом)</span>
+      </div>
+      <button onclick="closeWhiteboardModal()" style="background:none; border:none; color:#333; font-size:24px; font-weight:bold; cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px; max-height:65vh; overflow-y:auto; padding-right:6px;" id="wb-laws-container"></div>
+  </div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

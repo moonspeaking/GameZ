@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODALS (CHAPTERS, WHITEBOARD, STORY DECISION, VICTORY, COUNCIL)
+   ═══════════════════════════════════════════════════════════════════ */
+#modal-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(10, 10, 12, 0.95);
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+#modal-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent-gold);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+#modal-desc {
+  font-size: 15px;
+  color: #cfbfad;
+  max-width: 580px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.modal-btn {
+  background: var(--accent-gold);
+  color: #000;
+  border: none;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.modal-btn:hover { background: #f1c40f; transform: translateY(-1px); }
+
+/* Chapters Timeline Modal */
+#chapters-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(8, 8, 10, 0.94);
+  z-index: 205;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+.ch-modal-box {
+  background: #151519;
+  border: 1px solid #3d3527;
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 840px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+}
+.ch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.ch-card {
+  background: #1d1d24;
+  border: 1px solid #2e2e38;
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.ch-card:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+  background: #24242e;
+}
+.ch-card.active {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.08);
+}
+.ch-badge {
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--accent-gold);
+  display: flex;
+  justify-content: space-between;
+}
+.ch-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+.ch-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex: 1;
+}
+.ch-btn {
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: #2a2a35;
+  border: 1px solid #3e3e4d;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.ch-btn:hover {
+  background: var(--accent-gold);
+  color: #000;
+  border-color: var(--accent-gold);
+}
+
+/* Build Menu Modal */
+#build-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 205;
+}
+.bm-box {
+  background: #141418;
+  border: 1px solid #3a3a44;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+}
+.bm-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.bm-item {
+  background: #1c1c22;
+  border: 1px solid #2e2e38;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bm-item:hover { border-color: var(--accent-gold); background: #24242c; }
+.bm-icon { font-size: 20px; }
+.bm-name { font-size: 12px; font-weight: bold; color: #fff; }
+.bm-cost { font-size: 10px; color: var(--text-muted); }
