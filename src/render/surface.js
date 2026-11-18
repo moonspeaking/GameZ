@@ -48,7 +48,7 @@ export function drawSpeechBubble(ctx, x, y, text) {
 }
 
 export function drawZombiePile(ctx, leadX, skyH, isPiledOnHatch) {
-  const count = isPiledOnHatch ? 32 : 24;
+  const count = isPiledOnHatch ? 36 : 26;
   const t = Date.now() * 0.005;
 
   for (let i = 0; i < count; i++) {
@@ -63,19 +63,47 @@ export function drawZombiePile(ctx, leadX, skyH, isPiledOnHatch) {
       zy = skyH - 2 - (i % 3) * 3;
     }
 
-    ctx.fillStyle = (i % 2 === 0) ? '#5c735d' : '#4d594b';
-    ctx.fillRect(zx - 4, zy - 18, 8, 12);
+    // Shadow under zombie
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(zx, zy, 6, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    ctx.fillStyle = '#7a917b';
+    // Ragged infected clothing
+    const clothColors = ['#2c322b', '#383028', '#242a30', '#1f241e'];
+    ctx.fillStyle = clothColors[i % clothColors.length];
+    ctx.fillRect(zx - 4.5, zy - 18, 9, 13);
+
+    // Gaunt decaying neck & head
+    ctx.fillStyle = (i % 2 === 0) ? '#4a5745' : '#3d4839';
     ctx.beginPath(); ctx.arc(zx, zy - 22, 4.5, 0, Math.PI * 2); ctx.fill();
 
-    ctx.strokeStyle = '#3e4a3d';
-    ctx.lineWidth = 2;
+    // Glowing infected eyes (piercing red/amber in dark)
+    ctx.fillStyle = (i % 3 === 0) ? '#e74c3c' : '#f39c12';
+    ctx.fillRect(zx + 1, zy - 23, 1.5, 1.5);
+    ctx.fillRect(zx + 3.5, zy - 23, 1.5, 1.5);
+
+    // Clawing claw-arms reaching towards the hatch
+    ctx.strokeStyle = '#2f382b';
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    const armReach = isPiledOnHatch ? Math.sin(t * 2 + i) * 8 : 10;
+    const armReach = isPiledOnHatch ? Math.sin(t * 2 + i) * 10 : 12;
     ctx.moveTo(zx - 2, zy - 14);
     ctx.lineTo(zx + armReach, zy - 16 + Math.cos(t * 3 + i) * 4);
     ctx.stroke();
+
+    // Bony claw tip
+    ctx.fillStyle = '#222';
+    ctx.fillRect(zx + armReach - 1, zy - 17 + Math.cos(t * 3 + i) * 4, 2, 2);
+  }
+
+  // Blood smears around the hatch rim when piled
+  if (isPiledOnHatch) {
+    ctx.fillStyle = 'rgba(120, 20, 20, 0.75)';
+    ctx.fillRect(leadX - 8, skyH - 8, 32, 3);
+    ctx.beginPath();
+    ctx.arc(leadX + 6, skyH - 5, 4, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -290,12 +318,33 @@ export function drawSurfaceWorld(ctx, G) {
     ctx.fillRect(px, skyH + 14, 18, 22);
   }
 
-  // 10. The Hatch Collar & Signs
+  // 10. The Hatch Collar & Fortifications
   ctx.fillStyle = '#949089';
   ctx.fillRect(hatchX - 14, skyH - 6, 44, 20);
   ctx.strokeStyle = '#383633';
   ctx.lineWidth = 1.5;
   ctx.strokeRect(hatchX - 14, skyH - 6, 44, 20);
+
+  // Stacked Sandbags Protection around the perimeter
+  const sandCols = ['#756652', '#867661', '#6b5d4b'];
+  for (let sby = skyH - 4; sby >= skyH - 16; sby -= 5) {
+    const offset = (sby % 2 === 0) ? 0 : 4;
+    for (let sbx = hatchX - 38 + offset; sbx < hatchX - 16; sbx += 9) {
+      ctx.fillStyle = sandCols[(sbx + sby) % sandCols.length];
+      ctx.fillRect(sbx, sby, 8.5, 4.5);
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.strokeRect(sbx, sby, 8.5, 4.5);
+    }
+  }
+
+  // Concertina Razor Wire coiled on pickets
+  ctx.strokeStyle = '#5a626d';
+  ctx.lineWidth = 1.2;
+  for (let cx = hatchX - 42; cx < hatchX - 16; cx += 5) {
+    ctx.beginPath();
+    ctx.arc(cx, skyH - 18, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
   // Hatch cover
   if (G.state === 'game' || G.prologue.t > 8500) {

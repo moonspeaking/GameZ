@@ -18,6 +18,11 @@ import { getColonistPerk, COLONIST_PERKS } from '../entities/colonists.js';
 import { SCAVENGE_DESTINATIONS } from '../systems/events.js';
 import { calcColonistMood, pickThought, countBrokenColonists, getMoraleTierLabel, MOOD } from '../systems/morale.js';
 import { killColonist, openMemorialModal, closeMemorialModal } from '../systems/memorial.js';
+import { getConcretePattern, getSteelPattern, getHazardPattern, getStrataPattern } from '../render/procedural_textures.js';
+import { spawnDigParticles, spawnWeldingSparks, updateParticles } from '../render/particles.js';
+import { spawnFloatingText, updateFloatingTexts } from '../render/floating_fx.js';
+import { AmbienceEngine } from '../audio/ambience.js';
+import { AudioSys } from '../audio/audio_sys.js';
 
 export async function runTests() {
   console.log('🧪 [TEST RUNNER] Starting Antigravity test suite...');
@@ -246,6 +251,60 @@ export async function runTests() {
     assert('Memorial: fallen record has name, cause, epitaph, day',
       fallen.name === 'TEST' && fallen.cause === 'Умер во время теста' &&
       typeof fallen.epitaph === 'string' && fallen.day === 42);
+
+    // 18. Procedural Textures & Patterns
+    const testCanvas = document.createElement('canvas');
+    const testCtx = testCanvas.getContext('2d');
+    const cPat = getConcretePattern(testCtx);
+    assert('Textures: getConcretePattern returns canvas pattern', !!cPat);
+    const sPat = getSteelPattern(testCtx);
+    assert('Textures: getSteelPattern returns canvas pattern', !!sPat);
+    const hPat = getHazardPattern(testCtx);
+    assert('Textures: getHazardPattern returns canvas pattern', !!hPat);
+    const rPat = getStrataPattern(testCtx, 0);
+    assert('Textures: getStrataPattern returns geological strata pattern', !!rPat);
+
+    // 19. Dynamic Lighting & Emergency Systems
+    assert('Lighting: G.settings exists with lighting toggle enabled by default',
+      G.settings && G.settings.lightingEnabled === true);
+    G.redAlert = true;
+    assert('Lighting: G.redAlert can be toggled on/off', G.redAlert === true);
+    G.redAlert = false;
+    G.res.power = 0;
+    assert('Lighting: Blackout state detected when power is 0', G.res.power <= 0);
+    G.res.power = 100;
+
+    // 20. Particles FX Engine
+    const testParticles = [];
+    spawnDigParticles(testParticles, 100, 100);
+    assert('Particles: spawnDigParticles generates dust particles',
+      testParticles.length >= 5 && testParticles.some(p => p.type === 'dust'));
+    spawnWeldingSparks(testParticles, 100, 100);
+    assert('Particles: spawnWeldingSparks generates spark particles',
+      testParticles.some(p => p.type === 'spark'));
+    const countBeforeUpdate = testParticles.length;
+    testParticles[0].life = testParticles[0].maxLife;
+    updateParticles(testParticles);
+    assert('Particles: updateParticles advances life and prunes expired particles',
+      testParticles.length < countBeforeUpdate);
+
+    // 21. Floating Text Indicators System
+    const testFloating = [];
+    spawnFloatingText(testFloating, 50, 50, '+10 ⛏️', '#f1c40f');
+    assert('Floating FX: spawnFloatingText creates indicator item',
+      testFloating.length === 1 && testFloating[0].text === '+10 ⛏️');
+    const startY = testFloating[0].y;
+    updateFloatingTexts(testFloating);
+    assert('Floating FX: updateFloatingTexts moves item upward',
+      testFloating[0].y < startY);
+
+    // 22. Web Audio Procedural Ambience
+    assert('Ambience: AmbienceEngine singleton initialized with controls',
+      typeof AmbienceEngine.setVolume === 'function' && typeof AmbienceEngine.setEnabled === 'function');
+    AmbienceEngine.setVolume(0.4);
+    assert('Ambience: AmbienceEngine volume set to 0.4', Math.abs(AmbienceEngine.volume - 0.4) < 0.01);
+    assert('Audio: AudioSys volume controls exist',
+      typeof AudioSys.setSFXVolume === 'function' && typeof AudioSys.setAmbienceVolume === 'function');
 
   } catch (err) {
     failedCount++;

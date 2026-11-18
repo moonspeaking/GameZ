@@ -161,7 +161,8 @@
     <div style="display:flex; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #222;">
       <button onclick="SaveSystem.saveGame(false)" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 3px; cursor: pointer; font-weight: bold;">💾 Сохранить</button>
       <button onclick="SaveSystem.loadGame()" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #34d399; border: 1px solid #059669; border-radius: 3px; cursor: pointer; font-weight: bold;">📂 Загрузить</button>
-      <button onclick="SaveSystem.resetGame()" style="flex:0.6; padding: 4px 0; font-size: 10px; background: #291e1e; color: #f87171; border: 1px solid #b91c1c; border-radius: 3px; cursor: pointer;">🔄 Сброс</button>
+      <button onclick="openSettingsModal()" id="btn-settings" style="flex:0.8; padding: 4px 0; font-size: 10px; background: #262930; color: #f1c40f; border: 1px solid #635832; border-radius: 3px; cursor: pointer; font-weight: bold;">⚙️ Опции</button>
+      <button onclick="SaveSystem.resetGame()" style="flex:0.6; padding: 4px 0; font-size: 10px; background: #291e1e; color: #f87171; border: 1px solid #b91c1c; border-radius: 3px; cursor: pointer;">🔄</button>
       <span id="sb-save-time" style="font-size:9px; color:#666; align-self:center; margin-left:4px;">Авто</span>
     </div>
   </div>
@@ -471,6 +472,52 @@
     <div id="memorial-stats" style="margin-bottom:14px; padding:10px 14px; background:#100f0d; border:1px solid #2a2520; border-radius:6px;"></div>
     <!-- Scrollable content -->
     <div id="memorial-content" style="overflow-y:auto; flex:1; max-height:60vh; padding-right:4px;"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:230; justify-content:center; align-items:center;">
+  <div style="background:#131518; border:2px solid #635832; border-radius:8px; padding:22px; max-width:440px; width:90%; color:#cfbfad; box-shadow:0 10px 40px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:16px;">
+      <h2 style="color:#f1c40f; margin:0; font-size:16px; letter-spacing:1px;">⚙️ НАСТРОЙКИ СИМУЛЯТОРА</h2>
+      <button onclick="closeSettingsModal()" style="background:none; border:none; color:#aaa; font-size:22px; cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Graphics -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; color:#888; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">ГРАФИКА И ПРОИЗВОДИТЕЛЬНОСТЬ</div>
+      <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; cursor:pointer;">
+        <span style="font-size:12px;">💡 2D Динамическое освещение (Lightmaps)</span>
+        <input type="checkbox" id="set-opt-lighting" checked style="cursor:pointer; width:16px; height:16px;">
+      </label>
+      <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; cursor:pointer;">
+        <span style="font-size:12px;">✨ Процедурные частицы FX (пыль, пар, искры)</span>
+        <input type="checkbox" id="set-opt-particles" checked style="cursor:pointer; width:16px; height:16px;">
+      </label>
+    </div>
+
+    <!-- Audio -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px; color:#888; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">ЗВУКОВОЙ ЛАНДШАФТ (WEB AUDIO)</div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+          <span>🔊 Звуковые эффекты (SFX)</span>
+        </div>
+        <input type="range" id="set-opt-sfx" min="0" max="100" value="80" style="width:100%; cursor:pointer;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+          <span>📻 Эмбиент бункера (Гул генератора, капли)</span>
+        </div>
+        <input type="range" id="set-opt-amb" min="0" max="100" value="50" style="width:100%; cursor:pointer;">
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; gap:10px;">
+      <button onclick="applySettings()" style="flex:1; padding:8px 0; background:#f1c40f; color:#111; font-weight:bold; border:none; border-radius:4px; cursor:pointer;">СОХРАНИТЬ</button>
+      <button onclick="closeSettingsModal()" style="flex:0.6; padding:8px 0; background:#2a2c30; color:#ccc; border:1px solid #444; border-radius:4px; cursor:pointer;">ОТМЕНА</button>
+    </div>
   </div>
 </div>
 

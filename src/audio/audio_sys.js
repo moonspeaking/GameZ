@@ -4,15 +4,20 @@
  * Listens to eventBus 'sound' events for decoupled calls.
  */
 import { eventBus } from '../core/event_bus.js';
+import { AmbienceEngine } from './ambience.js';
 
 export const AudioSys = {
   ctx: null,
   enabled: true,
+  sfxVolume: 0.25,
 
   init() {
     if (!this.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) this.ctx = new AC();
+      if (AC) {
+        this.ctx = new AC();
+        AmbienceEngine.init(this.ctx);
+      }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -28,7 +33,7 @@ export const AudioSys = {
       const gain = this.ctx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.setValueAtTime(vol * (this.sfxVolume / 0.25), this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -48,6 +53,10 @@ export const AudioSys = {
 
   playDig() {
     this.playTone(120 + Math.random() * 50, 0.12, 'square', 0.15);
+  },
+
+  playFootstep() {
+    this.playTone(70 + Math.random() * 30, 0.05, 'triangle', 0.08);
   },
 
   playAlert() {
@@ -87,7 +96,7 @@ export const AudioSys = {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(65, this.ctx.currentTime);
       osc.frequency.linearRampToValueAtTime(45, this.ctx.currentTime + 1.2);
-      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.3 * (this.sfxVolume / 0.25), this.ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -108,7 +117,7 @@ export const AudioSys = {
       osc.frequency.setValueAtTime(440, now);
       osc.frequency.linearRampToValueAtTime(880, now + 0.5);
       osc.frequency.linearRampToValueAtTime(440, now + 1.0);
-      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.setValueAtTime(0.25 * (this.sfxVolume / 0.25), now);
       gain.gain.linearRampToValueAtTime(0.01, now + 1.0);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -125,8 +134,17 @@ export const AudioSys = {
     this.playTone(1000 + Math.random() * 500, 0.04, 'sine', 0.08);
   },
 
+  setSFXVolume(vol) {
+    this.sfxVolume = Math.max(0, Math.min(1, vol));
+  },
+
+  setAmbienceVolume(vol) {
+    AmbienceEngine.setVolume(vol);
+  },
+
   toggleMute() {
     this.enabled = !this.enabled;
+    AmbienceEngine.setEnabled(this.enabled);
     eventBus.emit('sound:mute-toggled', this.enabled);
     eventBus.emit('toast', { text: this.enabled ? '🔊 Звук включен' : '🔇 Звук выключен', style: 'toast-gold' });
     return this.enabled;
@@ -138,25 +156,15 @@ eventBus.on('sound', (arg, ...rest) => {
   if (typeof arg === 'string') {
     if (typeof AudioSys[arg] === 'function') {
       AudioSys[arg](...rest);
-    } else {
-      const fn = 'play' + arg.charAt(0).toUpperCase() + arg.slice(1);
-      if (typeof AudioSys[fn] === 'function') AudioSys[fn](...rest);
     }
-  } else if (arg && typeof arg === 'object') {
-    const t = arg.type;
-    if (t === 'tone') {
-      AudioSys.playTone(arg.freq || 440, arg.dur || 0.15, arg.wave || 'sine', arg.vol || 0.15);
-    } else if (t === 'pickaxe') {
-      AudioSys.playPickaxeClink();
-    } else if (t === 'metal_clang') {
-      AudioSys.playMetalClang();
-    } else if (t === 'water_drop') {
-      AudioSys.playWaterDrop();
-    } else if (t) {
-      const fn = 'play' + t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-      if (typeof AudioSys[fn] === 'function') {
-        AudioSys[fn](...rest);
-      }
+  } else if (arg && typeof arg === 'object' && arg.type) {
+    const fnName = 'play' + arg.type.charAt(0).toUpperCase() + arg.type.slice(1);
+    if (typeof AudioSys[fnName] === 'function') {
+      AudioSys[fnName](...(arg.args || []));
     }
   }
 });
+
+export function toggleSound() {
+  return AudioSys.toggleMute();
+}

@@ -5,6 +5,8 @@ import { ROOM_CATALOG } from '../world/rooms.js';
 import { updateGameModeUI } from '../systems/democracy.js';
 import { renderWhiteboardLaws } from '../systems/laws.js';
 import { getColonistPerk } from '../entities/colonists.js';
+import { AudioSys } from '../audio/audio_sys.js';
+import { AmbienceEngine } from '../audio/ambience.js';
 
 export function openChaptersModal() {
   const grid = document.getElementById('chapters-grid');
@@ -197,3 +199,38 @@ export function showDecisionModal(title, text, b1, b2, onAccept, onDecline) {
 eventBus.on('modal:decision', ({ title, text, b1, b2, onAccept, onDecline }) => {
   showDecisionModal(title, text, b1, b2, onAccept, onDecline);
 });
+
+export function openSettingsModal() {
+  const m = document.getElementById('settings-modal');
+  if (!m) return;
+  m.style.display = 'flex';
+  const chkLight = document.getElementById('set-opt-lighting');
+  const chkPart = document.getElementById('set-opt-particles');
+  const rngSfx = document.getElementById('set-opt-sfx');
+  const rngAmb = document.getElementById('set-opt-amb');
+
+  if (chkLight) chkLight.checked = G.settings.lightingEnabled !== false;
+  if (chkPart) chkPart.checked = G.settings.particlesEnabled !== false;
+  if (rngSfx) rngSfx.value = (AudioSys.sfxVolume !== undefined ? AudioSys.sfxVolume : 0.8) * 100;
+  if (rngAmb) rngAmb.value = (AmbienceEngine.volume !== undefined ? AmbienceEngine.volume : 0.5) * 100;
+}
+
+export function closeSettingsModal() {
+  const m = document.getElementById('settings-modal');
+  if (m) m.style.display = 'none';
+}
+
+export function applySettings() {
+  const chkLight = document.getElementById('set-opt-lighting');
+  const chkPart = document.getElementById('set-opt-particles');
+  const rngSfx = document.getElementById('set-opt-sfx');
+  const rngAmb = document.getElementById('set-opt-amb');
+
+  if (chkLight) G.settings.lightingEnabled = chkLight.checked;
+  if (chkPart) G.settings.particlesEnabled = chkPart.checked;
+  if (rngSfx) AudioSys.setSFXVolume(Number(rngSfx.value) / 100);
+  if (rngAmb) AmbienceEngine.setVolume(Number(rngAmb.value) / 100);
+
+  eventBus.emit('toast', { text: '⚙️ Настройки графики и звука обновлены!', style: 'toast-gold' });
+  closeSettingsModal();
+}

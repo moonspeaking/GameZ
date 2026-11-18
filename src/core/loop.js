@@ -12,6 +12,8 @@ import { render } from '../render/renderer.js';
 import { progressDailyResearch } from '../systems/research.js';
 import { updateColonistMoods, checkMoraleIncidents } from '../systems/morale.js';
 import { patchDeathEvents } from '../systems/memorial.js';
+import { updateParticles } from '../render/particles.js';
+import { updateFloatingTexts, spawnFloatingText } from '../render/floating_fx.js';
 
 let lastTime = 0;
 let isLoopRunning = false;
@@ -26,6 +28,22 @@ export function onNewDay() {
   G.res.food += G.mechanics.foodProduction;
   G.res.water += G.mechanics.waterProduction;
   G.res.power = Math.min(100, G.res.power + G.mechanics.powerProduction * 0.1);
+
+  // Floating production indicators
+  if (G.floatingTexts) {
+    if (G.mechanics.foodProduction > 0) {
+      spawnFloatingText(G.floatingTexts, 140, (SURFACE_Y + 5) * CELL_SIZE, `+${G.mechanics.foodProduction} 🍞`, '#2ecc71');
+    }
+    if (G.mechanics.waterProduction > 0) {
+      spawnFloatingText(G.floatingTexts, 220, (SURFACE_Y + 5) * CELL_SIZE, `+${G.mechanics.waterProduction} 💧`, '#3498db');
+    }
+  }
+
+  // Electrical blackout check & fear of darkness
+  if (G.res.power <= 0) {
+    G.mechanics.morale = Math.max(0, G.mechanics.morale - 2);
+    eventBus.emit('log', '⚠️ Блэкаут: темнота и холод в бункере снижают мораль (-2)');
+  }
 
   // Consumption
   G.res.food = Math.max(0, G.res.food - foodConsumption);
@@ -210,14 +228,9 @@ export function update(dt) {
   // Colonist wander
   updateColonists(simDt);
 
-  // Particles
-  for (let i = G.particles.length - 1; i >= 0; i--) {
-    const p = G.particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life--;
-    if (p.life <= 0) G.particles.splice(i, 1);
-  }
+  // Particles & Floating FX
+  if (G.particles) updateParticles(G.particles);
+  if (G.floatingTexts) updateFloatingTexts(G.floatingTexts);
 
   // Snowflakes (Year 30 winter)
   if (G.isWinterSnow) {

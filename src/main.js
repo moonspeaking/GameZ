@@ -9,6 +9,7 @@ import {
   openChaptersModal, closeChaptersModal,
   openGameModeModal, closeGameModeModal,
   openWhiteboardModal, closeWhiteboardModal,
+  openSettingsModal, closeSettingsModal, applySettings,
   toggleBuildMenu, cancelPlacement
 } from './ui/modals.js';
 import { cycleCamera } from './render/surveillance.js';
@@ -47,6 +48,9 @@ window.closeResearchModal = closeResearchModal;
 window.startResearch = startResearch;
 window.openMemorialModal = openMemorialModal;
 window.closeMemorialModal = closeMemorialModal;
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.applySettings = applySettings;
 window.sealBulkheads = sealBulkheads;
 window.colonistsFightBreach = colonistsFightBreach;
 window.SaveSystem = SaveSystem;

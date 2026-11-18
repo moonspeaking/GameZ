@@ -7,6 +7,10 @@ import { drawRooms } from './room_props.js';
 import { drawBlueprints, drawInteractivePlacementOverlay } from './placement_overlay.js';
 import { drawColonists } from './colonist_sprites.js';
 import { updateSurveillanceFeed } from './surveillance.js';
+import { drawLightingOverlay, resizeLighting } from './lighting.js';
+import { drawParticles, spawnWeldingSparks } from './particles.js';
+import { drawFloatingTexts, spawnFloatingText } from './floating_fx.js';
+import { AmbienceEngine } from '../audio/ambience.js';
 
 let canvas = null;
 let ctx = null;
@@ -20,6 +24,7 @@ export function resizeCanvas() {
   canvas.width = W;
   canvas.height = H;
   ctx.imageSmoothingEnabled = false;
+  resizeLighting(W, H);
 }
 
 export function initRenderer(cvs) {
@@ -29,6 +34,16 @@ export function initRenderer(cvs) {
   window.addEventListener('resize', resizeCanvas);
   eventBus.on('canvas_resize', resizeCanvas);
   eventBus.on('render_request', render);
+  eventBus.on('room:completed', (room) => {
+    if (G.particles) {
+      for (let s = 0; s < 6; s++) {
+        spawnWeldingSparks(G.particles, (room.x + Math.random() * room.w) * CELL_SIZE, (room.y + room.h - 1) * CELL_SIZE);
+      }
+    }
+    if (G.floatingTexts) {
+      spawnFloatingText(G.floatingTexts, (room.x + room.w / 2) * CELL_SIZE, room.y * CELL_SIZE, `🏗️ ${room.name}`, '#2ecc71', 12);
+    }
+  });
 }
 
 function renderPrologue() {
@@ -86,12 +101,16 @@ export function render() {
     return;
   }
 
+  const camX = Math.floor(G.cam.x);
+  const camY = Math.floor(G.cam.y);
+
   ctx.save();
   if (G.shake > 0) {
     ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
   }
-  ctx.translate(-Math.floor(G.cam.x), -Math.floor(G.cam.y));
+  ctx.translate(-camX, -camY);
 
+  // 1. World Rendering Layers
   drawSurfaceWorld(ctx, G);
   drawTerrain(ctx, G);
   drawCentralConcreteShaft(ctx, G);
@@ -100,14 +119,18 @@ export function render() {
   drawInteractivePlacementOverlay(ctx, G);
   drawColonists(ctx, G);
 
-  // Particles
-  G.particles.forEach(p => {
-    ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
-  });
+  // 2. Dynamic Particles FX
+  if (G.settings?.particlesEnabled !== false && G.particles) {
+    drawParticles(ctx, G.particles);
+  }
 
-  // Snowflakes
-  if (G.isWinterSnow) {
+  // 3. Floating Informational Indicators
+  if (G.floatingTexts) {
+    drawFloatingTexts(ctx, G.floatingTexts);
+  }
+
+  // 4. Snowflakes
+  if (G.isWinterSnow && G.snowflakes) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     G.snowflakes.forEach(s => {
       ctx.beginPath(); ctx.arc(s.x, s.y, 1.8, 0, Math.PI * 2); ctx.fill();
@@ -116,5 +139,12 @@ export function render() {
 
   ctx.restore();
 
+  // 5. Volumetric 2D Dynamic Lighting Overlay (Screen-space)
+  drawLightingOverlay(ctx, G, camX, camY, W, H);
+
+  // 6. Audio Ambience State Sync
+  AmbienceEngine.updateState(G);
+
+  // 7. Surveillance CRT Feed
   updateSurveillanceFeed(G);
 }

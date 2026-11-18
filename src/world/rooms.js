@@ -133,6 +133,7 @@ export function completeConstruction(bq) {
   eventBus.emit('log', `🏗 ПОСТРОЙКА ЗАВЕРШЕНА: ${newRoom.name}!`);
   eventBus.emit('sound', 'playBuild');
   eventBus.emit('toast', `🎉 Сектор «${newRoom.name}» готов к эксплуатации!`, 'toast-good');
+  eventBus.emit('room:completed', newRoom);
   eventBus.emit('state:changed');
 }
 

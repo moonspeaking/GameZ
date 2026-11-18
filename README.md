@@ -5,7 +5,7 @@
 [![Audio](https://img.shields.io/badge/Audio-Web_Audio_API-blue.svg)]()
 [![Modes](https://img.shields.io/badge/Modes-Democracy_%7C_Overseer_%7C_Anarchy-brightgreen.svg)]()
 [![Storage](https://img.shields.io/badge/Storage-localStorage_v2-success.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-36%2F36_Passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-68%2F68_Passed-brightgreen.svg)]()
 [![Dependencies](https://img.shields.io/badge/Dependencies-0_(Zero_Deps)-brightgreen.svg)]()
 [![Status](https://img.shields.io/badge/Status-Modular_%26_Playable-success.svg)]()
 
@@ -112,20 +112,25 @@ GameZ/
 │   │   ├── events.js          # Случайные события, кризисы, беженцы, вылазки
 │   │   ├── story.js           # 10 глав хроники 30 лет, пролог, прорыв
 │   │   └── save.js            # SaveSystem v2 (localStorage + миграция с v1)
-│   ├── render/                # Рендереры (только читают G)
+│   ├── render/                # Рендереры (индустриальный реализм, 0 внешних ассетов)
 │   │   ├── renderer.js        # Главный пайплайн отрисовки Canvas
-│   │   ├── surface.js         # Поверхность, город, автоколонна, зомби
-│   │   ├── underground.js     # Пласты грунта, ствол шахты, река, лифт
-│   │   ├── room_props.js      # Словарь рендереров для каждого типа комнаты
-│   │   ├── colonist_sprites.js# Спрайты персонажей, анимации, костюмы, бейджи
+│   │   ├── procedural_textures.js # Процедурные текстуры бетона, стали, грунта и hazard-полос
+│   │   ├── lighting.js        # 2D объемное динамическое освещение, lightmaps и Red Alert
+│   │   ├── particles.js       # FX-движок частиц (пыль от копки, сварочные искры, пар)
+│   │   ├── floating_fx.js     # Парящие индикаторы ресурсов (+10 ⛏️) и эмоций
+│   │   ├── surface.js         # Поверхность, руины города, укрепленный шлюз, анатомические зомби
+│   │   ├── underground.js     # Геологические пласты грунта, корни деревьев, шахта, река, лифт
+│   │   ├── room_props.js      # Детальные промышленные интерьеры всех 11 комнат + кабели
+│   │   ├── colonist_sprites.js# Экипированные колонисты (сон на койках, работа киркой, фонари)
 │   │   ├── placement_overlay.js# Призрак размещения чертежей, подсветка сноса
 │   │   └── surveillance.js    # ЭЛТ-монитор видеонаблюдения (4 камеры)
 │   ├── ui/                    # Пользовательский интерфейс и ввод
 │   │   ├── hud.js             # Обновление боковой панели, график роста, логи
-│   │   ├── modals.js          # Модальные окна (главы, стройка, решения)
+│   │   ├── modals.js          # Модальные окна (главы, стройка, решения, настройки)
 │   │   └── input.js           # Мышь, клавиатура (WASD), Touch-жесты
-│   ├── audio/                 # Звуковой движок
-│   │   └── audio_sys.js       # Процедурный синтезатор Web Audio API
+│   ├── audio/                 # Звуковой движок (Web Audio API)
+│   │   ├── audio_sys.js       # Процедурный синтезатор звуковых эффектов (SFX)
+│   │   └── ambience.js        # Адаптивный фоновый эмбиент (гул генератора, капли, сирена)
 │   ├── styles/                # Модульные стили CSS
 │   │   ├── base.css           # Базовые переменные, канвас, пролог, оверлеи
 │   │   ├── hud.css            # Боковая панель HUD, индикаторы, миникарта

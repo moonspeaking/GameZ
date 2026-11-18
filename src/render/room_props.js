@@ -1,344 +1,495 @@
 import { CELL_SIZE } from '../core/constants.js';
+import { getConcretePattern, getSteelPattern, getHazardPattern } from './procedural_textures.js';
+
+// --- Room Shell & Ambient Occlusion ---
+
+function renderRoomShell(ctx, r, rx, ry, rw, rh, G) {
+  const isBlackout = (G && G.res && G.res.energy <= 0);
+
+  // 1. Reinforced Concrete Outer Shell
+  const concretePat = getConcretePattern(ctx);
+  ctx.fillStyle = concretePat || '#3c4046';
+  ctx.fillRect(rx - 3, ry - 3, rw + 6, rh + 6);
+
+  // 2. Interior Walls: Two-tone Industrial Paint (Weathered grey top, olive/slate wainscot bottom)
+  ctx.fillStyle = '#26292e';
+  ctx.fillRect(rx, ry, rw, rh);
+
+  const wainscotY = ry + rh * 0.58;
+  ctx.fillStyle = '#1c1f24';
+  ctx.fillRect(rx, wainscotY, rw, rh * 0.42);
+
+  // Metal wainscot trim rail
+  ctx.fillStyle = '#3a3f47';
+  ctx.fillRect(rx, wainscotY - 2, rw, 2);
+
+  // 3. Ambient Occlusion (Depth Shadows on Top, Left, Right ceiling corners)
+  const aoTop = ctx.createLinearGradient(rx, ry, rx, ry + 12);
+  aoTop.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+  aoTop.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = aoTop;
+  ctx.fillRect(rx, ry, rw, 12);
+
+  const aoLeft = ctx.createLinearGradient(rx, ry, rx + 10, ry);
+  aoLeft.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+  aoLeft.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = aoLeft;
+  ctx.fillRect(rx, ry, 10, rh);
+
+  const aoRight = ctx.createLinearGradient(rx + rw, ry, rx + rw - 10, ry);
+  aoRight.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+  aoRight.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = aoRight;
+  ctx.fillRect(rx + rw - 10, ry, 10, rh);
+
+  // 4. Overhead Infrastructure: Black Steel Conduit & Copper Utility Pipes along ceiling
+  ctx.fillStyle = '#111315';
+  ctx.fillRect(rx, ry + 3, rw, 3);
+  ctx.fillStyle = '#8d5524'; // copper pipe
+  ctx.fillRect(rx, ry + 7, rw, 2);
+
+  // Pipe junction brackets
+  ctx.fillStyle = '#4a505b';
+  for (let px = rx + 15; px < rx + rw - 10; px += 28) {
+    ctx.fillRect(px, ry + 2, 3, 8);
+  }
+
+  // 5. Heavy Steel Floor Track
+  ctx.fillStyle = '#1b1d21';
+  ctx.fillRect(rx, ry + rh - 3, rw, 3);
+
+  // 6. Military Stencil Room Label top-left
+  ctx.fillStyle = 'rgba(10, 12, 15, 0.75)';
+  ctx.fillRect(rx + 5, ry + 12, Math.min(rw - 10, 78), 11);
+  ctx.fillStyle = '#b8c2cc';
+  ctx.font = 'bold 7.5px monospace';
+  ctx.fillText(r.name.substring(0, 14), rx + 8, ry + 20);
+
+  // 7. Unpowered Blinking Warning Badge if energy <= 0
+  if (isBlackout) {
+    const pulse = (Math.sin(Date.now() * 0.008) + 1) * 0.5;
+    ctx.fillStyle = `rgba(200, 30, 30, ${0.4 + pulse * 0.5})`;
+    ctx.fillRect(rx + rw - 55, ry + 12, 50, 11);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 7px sans-serif';
+    ctx.fillText('⚡ OFF', rx + rw - 44, ry + 20);
+  }
+}
+
+// --- Specific Room Interiors (All 11 Types) ---
 
 function renderBunkerProps(ctx, r, rx, ry, rw, rh) {
-  // Two-tier Bunk Beds on Left
-  const bedX = rx + 12;
-  const bedY = ry + rh - 48;
-  ctx.fillStyle = '#44484d';
-  ctx.fillRect(bedX, bedY, 4, 48);
-  ctx.fillRect(bedX + 46, bedY, 4, 48);
-  ctx.fillRect(bedX, bedY + 14, 50, 4);
-  ctx.fillRect(bedX, bedY + 38, 50, 4);
-  ctx.fillStyle = '#e67e22'; // orange blanket top
-  ctx.fillRect(bedX + 4, bedY + 10, 42, 4);
-  ctx.fillStyle = '#3498db'; // blue blanket bottom
-  ctx.fillRect(bedX + 4, bedY + 34, 42, 4);
-  ctx.fillStyle = '#ffffff'; // pillows
-  ctx.fillRect(bedX + 6, bedY + 8, 8, 5);
-  ctx.fillRect(bedX + 6, bedY + 32, 8, 5);
+  // Heavy Steel Tubular Bunk Beds (Double Bunk) on Left
+  const bedX = rx + 8;
+  const bedY = ry + rh - 46;
+  ctx.fillStyle = '#2b3038';
+  ctx.fillRect(bedX, bedY, 4, 46);
+  ctx.fillRect(bedX + 44, bedY, 4, 46);
+  ctx.fillRect(bedX, bedY + 16, 48, 3);
+  ctx.fillRect(bedX, bedY + 38, 48, 3);
 
-  // Yellow plastic bucket on floor
-  ctx.fillStyle = '#f1c40f';
-  ctx.fillRect(bedX + 54, ry + rh - 13, 10, 13);
-  ctx.strokeStyle = '#b7950b';
+  // Mattresses and Wool Blankets (Military Olive top, Dark Navy bottom) with realistic fabric folds
+  ctx.fillStyle = '#3a4433'; // olive wool blanket top
+  ctx.fillRect(bedX + 4, bedY + 12, 38, 4);
+  ctx.fillStyle = '#263342'; // navy wool blanket bottom
+  ctx.fillRect(bedX + 4, bedY + 34, 38, 4);
+
+  // Pillows
+  ctx.fillStyle = '#c5ccd3';
+  ctx.fillRect(bedX + 5, bedY + 9, 9, 4);
+  ctx.fillRect(bedX + 5, bedY + 31, 9, 4);
+
+  // Steel Locker on Right
+  const lkX = rx + rw - 32;
+  const lkY = ry + rh - 44;
+  ctx.fillStyle = '#22262d';
+  ctx.fillRect(lkX, lkY, 24, 44);
+  ctx.strokeStyle = '#3e4450';
   ctx.lineWidth = 1;
-  ctx.strokeRect(bedX + 54, ry + rh - 13, 10, 13);
+  ctx.strokeRect(lkX, lkY, 24, 44);
 
-  // Framed Whiteboard / Map on wall
-  const wbX = rx + rw / 2 - 20;
+  // Locker louvers / vents
+  ctx.fillStyle = '#111417';
+  ctx.fillRect(lkX + 4, lkY + 6, 16, 1.5);
+  ctx.fillRect(lkX + 4, lkY + 10, 16, 1.5);
+  ctx.fillRect(lkX + 4, lkY + 14, 16, 1.5);
+
+  // Wall Whiteboard with territory map and survival guidelines
+  const wbX = rx + rw / 2 - 18;
   const wbY = ry + 16;
-  ctx.fillStyle = '#fdfefe';
-  ctx.fillRect(wbX, wbY, 40, 20);
-  ctx.strokeStyle = '#7f8c8d';
+  ctx.fillStyle = '#dfe4ea';
+  ctx.fillRect(wbX, wbY, 36, 18);
+  ctx.strokeStyle = '#57606f';
   ctx.lineWidth = 1.2;
-  ctx.strokeRect(wbX, wbY, 40, 20);
-  ctx.strokeStyle = '#2980b9';
-  ctx.lineWidth = 1;
+  ctx.strokeRect(wbX, wbY, 36, 18);
+
+  ctx.strokeStyle = '#2f3542';
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(wbX + 5, wbY + 6); ctx.lineTo(wbX + 35, wbY + 6);
-  ctx.moveTo(wbX + 5, wbY + 11); ctx.lineTo(wbX + 28, wbY + 11);
+  ctx.moveTo(wbX + 4, wbY + 5); ctx.lineTo(wbX + 32, wbY + 5);
+  ctx.moveTo(wbX + 4, wbY + 9); ctx.lineTo(wbX + 26, wbY + 9);
   ctx.stroke();
 
-  // Heavy Steel Supply Shelves on Right
-  const shX = rx + rw - 70;
-  const shY = ry + rh - 54;
-  ctx.fillStyle = '#34495e';
-  ctx.fillRect(shX, shY, 4, 54);
-  ctx.fillRect(shX + 56, shY, 4, 54);
-  ctx.fillRect(shX, shY + 16, 60, 3);
-  ctx.fillRect(shX, shY + 34, 60, 3);
-  const canColors = ['#e74c3c', '#2ecc71', '#f39c12', '#3498db', '#e67e22'];
-  for (let ci = 0; ci < 5; ci++) {
-    ctx.fillStyle = canColors[ci % canColors.length];
-    ctx.fillRect(shX + 6 + ci * 10, shY + 6, 7, 10);
-    ctx.fillRect(shX + 6 + ci * 10, shY + 24, 7, 10);
-  }
-
-  // Blue fuel drums & Cardboard boxes on floor
-  ctx.fillStyle = '#2980b9';
-  ctx.fillRect(shX + 6, ry + rh - 18, 14, 18);
-  ctx.fillRect(shX + 22, ry + rh - 18, 14, 18);
-  ctx.fillStyle = '#bfa181';
-  ctx.fillRect(shX + 38, ry + rh - 14, 14, 14);
-}
-
-function renderFarmProps(ctx, r, rx, ry, rw, rh) {
-  // Tree roots breaking through ceiling
-  ctx.strokeStyle = '#3e2717';
-  ctx.lineWidth = 2.5;
-  for (let rxo = 15; rxo < rw - 15; rxo += 28) {
-    ctx.beginPath();
-    ctx.moveTo(rx + rxo, ry);
-    ctx.quadraticCurveTo(rx + rxo + 8, ry + 18, rx + rxo - 4, ry + 32);
-    ctx.stroke();
-  }
-
-  // Wooden planting beds with dark soil
-  ctx.fillStyle = '#4a3325';
-  ctx.fillRect(rx + 10, ry + rh - 18, rw - 20, 18);
-  ctx.fillStyle = '#2b1d14';
-  ctx.fillRect(rx + 12, ry + rh - 20, rw - 24, 6);
-
-  // Bioluminescent glowing mushrooms
-  const shroomColors = ['#5dade2', '#a9dfbf', '#f9e79f', '#58d68d'];
-  for (let mx = rx + 18; mx < rx + rw - 20; mx += 14) {
-    ctx.fillStyle = '#fdfefe';
-    ctx.fillRect(mx + 2, ry + rh - 26, 2, 8);
-    ctx.fillStyle = shroomColors[(mx) % shroomColors.length];
-    ctx.beginPath();
-    ctx.arc(mx + 3, ry + rh - 28, 4.5, Math.PI, 0);
-    ctx.fill();
-    // Spore glow
-    ctx.fillStyle = 'rgba(93, 173, 226, 0.25)';
-    ctx.beginPath();
-    ctx.arc(mx + 3, ry + rh - 28, 9, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function renderWaterPumpProps(ctx, r, rx, ry, rw, rh) {
-  const twX = rx + rw / 2;
-  const twY = ry + rh / 2 + 6;
-  ctx.strokeStyle = '#7f8c8d';
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(twX, twY, 22, 0, Math.PI * 2); ctx.stroke();
-
-  // Spinning turbine blades
-  const tAngle = Date.now() * 0.008;
-  ctx.strokeStyle = '#bdc3c7';
-  ctx.lineWidth = 2.5;
-  for (let b = 0; b < 6; b++) {
-    const ang = tAngle + (b * Math.PI) / 3;
-    ctx.beginPath();
-    ctx.moveTo(twX, twY);
-    ctx.lineTo(twX + Math.cos(ang) * 20, twY + Math.sin(ang) * 20);
-    ctx.stroke();
-  }
-
-  // Blue high-pressure water pipe
-  ctx.fillStyle = '#2980b9';
-  ctx.fillRect(rx + 10, ry + rh - 14, rw - 20, 10);
-  ctx.strokeStyle = '#1a5276';
-  ctx.strokeRect(rx + 10, ry + rh - 14, rw - 20, 10);
-
-  // Brass pressure gauges
-  ctx.fillStyle = '#d4ac0d';
-  ctx.beginPath(); ctx.arc(rx + 24, ry + 22, 6, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(rx + 42, ry + 22, 6, 0, Math.PI * 2); ctx.fill();
-}
-
-function renderGeneratorProps(ctx, r, rx, ry, rw, rh) {
-  // Heavy industrial generator diesel engine
-  const genX = rx + 16;
-  const genY = ry + rh - 40;
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(genX, genY, rw - 32, 36);
-  ctx.fillStyle = '#f39c12';
-  ctx.fillRect(genX + 6, genY + 6, 16, 12);
+  // Red marker star (Bunker location)
   ctx.fillStyle = '#e74c3c';
-  ctx.beginPath(); ctx.arc(genX + rw - 50, genY + 12, 5, 0, Math.PI * 2); ctx.fill();
-  // Exhaust pipe upward
-  ctx.strokeStyle = '#7f8c8d';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(genX + 12, genY); ctx.lineTo(genX + 12, ry + 8);
-  ctx.stroke();
-}
-
-function renderKitchenProps(ctx, r, rx, ry, rw, rh) {
-  const tabX = rx + rw / 2 - 25;
-  const tabY = ry + rh - 22;
-  ctx.fillStyle = '#6e4a2e';
-  ctx.fillRect(tabX, tabY, 50, 10);
-  ctx.fillRect(tabX + 4, tabY + 10, 6, 12);
-  ctx.fillRect(tabX + 40, tabY + 10, 6, 12);
-  ctx.fillStyle = '#95a5a6';
-  for (let bi = 0; bi < 3; bi++) {
-    ctx.beginPath();
-    ctx.arc(tabX + 12 + bi * 14, tabY - 2, 4, 0, Math.PI);
-    ctx.fill();
-  }
-  // Animated steam rising from kettles
-  const t = Date.now() * 0.003;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  for (let bi = 0; bi < 3; bi++) {
-    const steamY = tabY - 6 - ((t * 8 + bi * 4) % 12);
-    ctx.beginPath();
-    ctx.arc(tabX + 12 + bi * 14 + Math.sin(t * 3 + bi) * 2.5, steamY, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = '#1e272e';
-  ctx.fillRect(rx + 12, ry + 12, 34, 18);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '7px sans-serif';
-  ctx.fillText('MESS', rx + 16, ry + 24);
-}
-
-function renderArmoryProps(ctx, r, rx, ry, rw, rh) {
-  const rackX = rx + 12;
-  const rackY = ry + rh - 45;
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(rackX, rackY, 60, 42);
-  ctx.fillStyle = '#1a252f';
-  ctx.fillRect(rackX + 4, rackY + 4, 52, 34);
-  ctx.fillStyle = '#7f8c8d';
-  for (let i = 0; i < 4; i++) {
-    ctx.fillRect(rackX + 10 + i * 12, rackY + 8, 4, 26);
-    ctx.fillRect(rackX + 8 + i * 12, rackY + 28, 8, 4);
-  }
-  ctx.fillStyle = '#27ae60';
-  ctx.fillRect(rx + rw - 44, ry + rh - 18, 18, 16);
-  ctx.fillRect(rx + rw - 24, ry + rh - 18, 18, 16);
-  ctx.fillStyle = '#f1c40f';
-  ctx.font = 'bold 7px sans-serif';
-  ctx.fillText('AMMO', rx + rw - 42, ry + rh - 7);
+  ctx.beginPath(); ctx.arc(wbX + 16, wbY + 13, 2, 0, Math.PI * 2); ctx.fill();
 }
 
 function renderQuartersProps(ctx, r, rx, ry, rw, rh) {
   renderBunkerProps(ctx, r, rx, ry, rw, rh);
 }
 
-function renderInfirmaryProps(ctx, r, rx, ry, rw, rh) {
-  // Medical bed & Green Cross
-  const bedX = rx + 14;
-  const bedY = ry + rh - 24;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(bedX, bedY, 44, 14);
-  ctx.fillStyle = '#3498db';
-  ctx.fillRect(bedX + 2, bedY + 2, 40, 10);
-  ctx.fillStyle = '#2ecc71';
-  // Green cross on wall
-  const crossX = rx + rw - 35;
-  const crossY = ry + 16;
-  ctx.fillRect(crossX - 2, crossY - 8, 4, 16);
-  ctx.fillRect(crossX - 8, crossY - 2, 16, 4);
-}
-
-function renderSchoolProps(ctx, r, rx, ry, rw, rh) {
-  const boardX = rx + rw / 2 - 25;
-  const boardY = ry + 12;
-  ctx.fillStyle = '#1e3725';
-  ctx.fillRect(boardX, boardY, 50, 22);
-  ctx.strokeStyle = '#8d6e63';
-  ctx.lineWidth = 1.8;
-  ctx.strokeRect(boardX, boardY, 50, 22);
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.font = '6px monospace';
-  ctx.fillText('2+2=4  BELOW', boardX + 6, boardY + 10);
-  ctx.fillText('NEW GENERATION', boardX + 4, boardY + 18);
-  ctx.fillStyle = '#6d4c41';
-  ctx.fillRect(rx + 12, ry + rh - 18, 28, 16);
-  ctx.fillRect(rx + rw - 40, ry + rh - 18, 28, 16);
-}
-
-function renderHydroUvProps(ctx, r, rx, ry, rw, rh) {
-  const rackX = rx + 8;
-  const rackY = ry + rh - 48;
-  ctx.fillStyle = '#111';
-  ctx.fillRect(rackX, rackY, rw - 16, 46);
-  const uvPulse = 0.22 + Math.sin(Date.now() * 0.003) * 0.08;
-  ctx.fillStyle = `rgba(155, 89, 182, ${uvPulse})`;
-  ctx.fillRect(rackX + 4, rackY + 4, rw - 24, 38);
-  ctx.fillStyle = '#9b59b6';
-  ctx.fillRect(rackX + 4, rackY + 8, rw - 24, 3);
-  ctx.fillRect(rackX + 4, rackY + 26, rw - 24, 3);
-  ctx.fillStyle = '#2ecc71';
-  for (let px = rackX + 8; px < rx + rw - 16; px += 8) {
-    ctx.beginPath(); ctx.arc(px, rackY + 18, 3.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(px, rackY + 36, 3.5, 0, Math.PI * 2); ctx.fill();
-  }
-}
-
-function renderWorkshopProps(ctx, r, rx, ry, rw, rh) {
-  const benchX = rx + 14;
-  const benchY = ry + rh - 22;
-  ctx.fillStyle = '#5d4037';
-  ctx.fillRect(benchX, benchY, rw - 28, 8);
-  ctx.fillRect(benchX + 4, benchY + 8, 6, 14);
-  ctx.fillRect(benchX + rw - 38, benchY + 8, 6, 14);
-  ctx.fillStyle = '#95a5a6';
-  ctx.fillRect(benchX + 6, benchY - 8, 10, 8);
-  ctx.fillRect(benchX + 22, benchY - 5, 12, 4);
-  ctx.fillStyle = '#37474f';
-  ctx.fillRect(rx + rw / 2 - 20, ry + 12, 40, 6);
-
-  // Welding sparks animation
-  if (Math.random() < 0.3) {
-    ctx.fillStyle = Math.random() < 0.5 ? '#f1c40f' : '#ffffff';
+function renderFarmProps(ctx, r, rx, ry, rw, rh) {
+  // Tree roots dangling into the cave ceiling
+  ctx.strokeStyle = '#322013';
+  ctx.lineWidth = 2.2;
+  for (let rxo = 12; rxo < rw - 12; rxo += 24) {
     ctx.beginPath();
-    ctx.arc(benchX + 18 + (Math.random() - 0.5) * 10, benchY - 8 + (Math.random() - 0.5) * 6, 1.8, 0, Math.PI * 2);
+    ctx.moveTo(rx + rxo, ry);
+    ctx.quadraticCurveTo(rx + rxo + 6, ry + 16, rx + rxo - 4, ry + 28);
+    ctx.stroke();
+  }
+
+  // Wooden Planter Troughs with dark rich loam/humus
+  const troughH = 16;
+  ctx.fillStyle = '#2d1d12';
+  ctx.fillRect(rx + 8, ry + rh - troughH, rw - 16, troughH);
+  ctx.fillStyle = '#170f09'; // soil layer
+  ctx.fillRect(rx + 10, ry + rh - troughH - 2, rw - 20, 5);
+
+  // Bioluminescent Cave Fungi with realistic spore glow
+  const shroomCols = ['#5dade2', '#58d68d', '#f4d03f', '#a569bd'];
+  for (let mx = rx + 16; mx < rx + rw - 16; mx += 14) {
+    const col = shroomCols[Math.floor(mx) % shroomCols.length];
+    // Stem
+    ctx.fillStyle = '#d5dbdb';
+    ctx.fillRect(mx + 2, ry + rh - 22, 2.5, 7);
+    // Cap
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(mx + 3, ry + rh - 23, 4.5, Math.PI, 0);
+    ctx.fill();
+    // Spore pulse
+    const spPulse = (Math.sin(Date.now() * 0.004 + mx) + 1) * 0.5;
+    ctx.fillStyle = col.replace(')', ', 0.25)').replace('rgb', 'rgba').replace('#', 'rgba(');
+    ctx.fillStyle = 'rgba(93, 173, 226, 0.2)';
+    ctx.beginPath();
+    ctx.arc(mx + 3, ry + rh - 23, 7 + spPulse * 3, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
+function renderHydroUvProps(ctx, r, rx, ry, rw, rh) {
+  // Vertical Stainless Steel Hydroponic Racks
+  const rackX = rx + 6;
+  const rackY = ry + rh - 48;
+  const rackW = rw - 12;
+
+  ctx.fillStyle = '#1e2229';
+  ctx.fillRect(rackX, rackY, rackW, 46);
+
+  // Two tiers of UV LED grow light bars
+  const uvPulse = 0.35 + Math.sin(Date.now() * 0.003) * 0.08;
+  ctx.fillStyle = `rgba(185, 80, 240, ${uvPulse})`;
+  ctx.fillRect(rackX + 4, rackY + 6, rackW - 8, 38);
+
+  // Metal LED light fixture bar
+  ctx.fillStyle = '#6a2c85';
+  ctx.fillRect(rackX + 4, rackY + 8, rackW - 8, 2.5);
+  ctx.fillRect(rackX + 4, rackY + 28, rackW - 8, 2.5);
+
+  // Leafy green plants on upper and lower tier
+  ctx.fillStyle = '#27ae60';
+  for (let px = rackX + 8; px < rackX + rackW - 8; px += 7) {
+    ctx.beginPath(); ctx.arc(px, rackY + 19, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px, rackY + 39, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(px - 1, rackY + 16, 2, 2);
+    ctx.fillRect(px - 1, rackY + 36, 2, 2);
+    ctx.fillStyle = '#27ae60';
+  }
+
+  // Clear nutrient solution tubing with animated bubble flow
+  ctx.strokeStyle = 'rgba(80, 200, 255, 0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(rackX + 2, rackY + 10);
+  ctx.lineTo(rackX + 2, rackY + 44);
+  ctx.stroke();
+}
+
+function renderWaterPumpProps(ctx, r, rx, ry, rw, rh) {
+  // Cast Iron Water Turbine & Pumping Housing
+  const twX = rx + rw / 2;
+  const twY = ry + rh / 2 + 6;
+
+  // Bolted flange outer ring
+  ctx.strokeStyle = '#3e444e';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(twX, twY, 20, 0, Math.PI * 2); ctx.stroke();
+
+  // Rotating brass impeller blades
+  const angle = Date.now() * 0.007;
+  ctx.strokeStyle = '#c59b27';
+  ctx.lineWidth = 2.5;
+  for (let i = 0; i < 6; i++) {
+    const a = angle + (i * Math.PI) / 3;
+    ctx.beginPath();
+    ctx.moveTo(twX, twY);
+    ctx.lineTo(twX + Math.cos(a) * 17, twY + Math.sin(a) * 17);
+    ctx.stroke();
+  }
+
+  // High-pressure blue water main running across the floor
+  ctx.fillStyle = '#1a3c54';
+  ctx.fillRect(rx + 8, ry + rh - 13, rw - 16, 10);
+  ctx.strokeStyle = '#2980b9';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rx + 8, ry + rh - 13, rw - 16, 10);
+
+  // Brass pressure gauge dials
+  ctx.fillStyle = '#f5f6fa';
+  ctx.beginPath(); ctx.arc(rx + 22, ry + 24, 5.5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#b7950b';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  // Red needle
+  ctx.strokeStyle = '#e74c3c';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(rx + 22, ry + 24); ctx.lineTo(rx + 24, ry + 21); ctx.stroke();
+}
+
+function renderGeneratorProps(ctx, r, rx, ry, rw, rh) {
+  // Heavy Industrial Diesel Engine & Bike Dynamo
+  const gx = rx + 12;
+  const gy = ry + rh - 38;
+  const gw = rw - 24;
+
+  // Dark cast iron engine block with oil stains
+  ctx.fillStyle = '#1e2227';
+  ctx.fillRect(gx, gy, gw, 35);
+  ctx.strokeStyle = '#333842';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(gx, gy, gw, 35);
+
+  // Rotating belt pulley
+  const spin = Date.now() * 0.015;
+  ctx.fillStyle = '#2f3542';
+  ctx.beginPath(); ctx.arc(gx + 12, gy + 16, 9, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#f1c40f'; // rotating marker
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(gx + 12, gy + 16);
+  ctx.lineTo(gx + 12 + Math.cos(spin) * 7, gy + 16 + Math.sin(spin) * 7);
+  ctx.stroke();
+
+  // Heavy steel exhaust flue leading through the ceiling
+  ctx.strokeStyle = '#4b525f';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(gx + gw - 12, gy);
+  ctx.lineTo(gx + gw - 12, ry + 6);
+  ctx.stroke();
+
+  // 55-gallon Diesel fuel drum
+  ctx.fillStyle = '#1b4f72';
+  ctx.fillRect(gx + gw - 28, gy + 12, 13, 23);
+  ctx.fillStyle = '#f39c12';
+  ctx.fillRect(gx + gw - 28, gy + 18, 13, 2.5); // hazard stripe
+}
+
+function renderKitchenProps(ctx, r, rx, ry, rw, rh) {
+  // Heavy Cast Iron Stove on Left
+  const stX = rx + 10;
+  const stY = ry + rh - 34;
+  ctx.fillStyle = '#1b1d20';
+  ctx.fillRect(stX, stY, 22, 31);
+  ctx.strokeStyle = '#3a3e46';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(stX, stY, 22, 31);
+
+  // Flue pipe
+  ctx.strokeStyle = '#2f3542';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(stX + 11, stY); ctx.lineTo(stX + 11, ry + 6); ctx.stroke();
+
+  // Rustic Wooden Mess Table & Benches
+  const tabX = rx + 38;
+  const tabY = ry + rh - 22;
+  ctx.fillStyle = '#4a2f1b';
+  ctx.fillRect(tabX, tabY, rw - 48, 8);
+  ctx.fillRect(tabX + 4, tabY + 8, 5, 12);
+  ctx.fillRect(tabX + rw - 58, tabY + 8, 5, 12);
+
+  // Metal mess tins and mugs
+  ctx.fillStyle = '#95a5a6';
+  for (let mi = 0; mi < 3; mi++) {
+    ctx.fillRect(tabX + 8 + mi * 14, tabY - 3, 7, 3);
+  }
+}
+
+function renderArmoryProps(ctx, r, rx, ry, rw, rh) {
+  // Steel Wire Mesh Partition
+  ctx.strokeStyle = 'rgba(120, 130, 145, 0.4)';
+  ctx.lineWidth = 1;
+  for (let x = rx + 12; x < rx + rw - 12; x += 6) {
+    ctx.beginPath(); ctx.moveTo(x, ry + 12); ctx.lineTo(x, ry + rh - 4); ctx.stroke();
+  }
+
+  // Rifle Rack with Automatic Rifles
+  const rkX = rx + 12;
+  const rkY = ry + rh - 42;
+  ctx.fillStyle = '#1c2026';
+  ctx.fillRect(rkX, rkY, 38, 38);
+  ctx.fillStyle = '#3a404c';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(rkX + 6 + i * 11, rkY + 6, 3, 26);
+    ctx.fillRect(rkX + 4 + i * 11, rkY + 24, 7, 4);
+  }
+
+  // Olive Drab Ammo Crates
+  const crX = rx + rw - 34;
+  const crY = ry + rh - 22;
+  ctx.fillStyle = '#2d3b27';
+  ctx.fillRect(crX, crY, 26, 18);
+  ctx.fillStyle = '#f1c40f';
+  ctx.font = 'bold 6.5px monospace';
+  ctx.fillText('7.62x39', crX + 2, crY + 11);
+}
+
+function renderInfirmaryProps(ctx, r, rx, ry, rw, rh) {
+  // Stainless Steel Hospital Bed
+  const bedX = rx + 12;
+  const bedY = ry + rh - 26;
+  ctx.fillStyle = '#2c333d';
+  ctx.fillRect(bedX, bedY, 46, 22);
+  ctx.fillStyle = '#ecf0f1'; // sterile white sheet
+  ctx.fillRect(bedX + 2, bedY + 3, 42, 6);
+  ctx.fillRect(bedX + 4, bedY + 1, 10, 4); // pillow
+
+  // Mobile IV Drip Stand with saline bag
+  const ivX = bedX + 52;
+  ctx.strokeStyle = '#95a5a6';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ivX, ry + rh - 4);
+  ctx.lineTo(ivX, ry + 16);
+  ctx.stroke();
+
+  // Saline drip bag
+  ctx.fillStyle = 'rgba(230, 245, 255, 0.8)';
+  ctx.fillRect(ivX - 2.5, ry + 17, 5, 8);
+
+  // Vitals ECG Monitor with glowing pulse
+  const monX = rx + rw - 28;
+  const monY = ry + 16;
+  ctx.fillStyle = '#111417';
+  ctx.fillRect(monX, monY, 22, 16);
+  ctx.strokeStyle = '#2ecc71';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(monX + 2, monY + 9);
+  ctx.lineTo(monX + 7, monY + 9);
+  ctx.lineTo(monX + 10, monY + 4);
+  ctx.lineTo(monX + 13, monY + 13);
+  ctx.lineTo(monX + 16, monY + 9);
+  ctx.lineTo(monX + 20, monY + 9);
+  ctx.stroke();
+}
+
+function renderWorkshopProps(ctx, r, rx, ry, rw, rh) {
+  // Heavy Industrial Workbench
+  const bX = rx + 12;
+  const bY = ry + rh - 22;
+  const bW = rw - 24;
+
+  ctx.fillStyle = '#422817';
+  ctx.fillRect(bX, bY, bW, 8);
+  ctx.fillStyle = '#23272e';
+  ctx.fillRect(bX + 3, bY + 8, 6, 12);
+  ctx.fillRect(bX + bW - 9, bY + 8, 6, 12);
+
+  // Bench Vice
+  ctx.fillStyle = '#7f8c8d';
+  ctx.fillRect(bX + 4, bY - 8, 9, 8);
+
+  // Wall Pegboard with tool silhouettes
+  const pbX = rx + rw / 2 - 20;
+  const pbY = ry + 16;
+  ctx.fillStyle = '#282b30';
+  ctx.fillRect(pbX, pbY, 40, 16);
+  ctx.fillStyle = '#4a505a';
+  for (let x = pbX + 4; x < pbX + 36; x += 6) {
+    ctx.fillRect(x, pbY + 4, 2, 8);
+  }
+}
+
+function renderSchoolProps(ctx, r, rx, ry, rw, rh) {
+  // Slate Blackboard
+  const bbX = rx + rw / 2 - 24;
+  const bbY = ry + 14;
+  ctx.fillStyle = '#152b1b';
+  ctx.fillRect(bbX, bbY, 48, 20);
+  ctx.strokeStyle = '#5d4037';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(bbX, bbY, 48, 20);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.font = '6px monospace';
+  ctx.fillText('COLONY EARTH', bbX + 4, bbY + 8);
+  ctx.fillText('SURVIVAL CH.1', bbX + 4, bbY + 16);
+
+  // Student Desks
+  ctx.fillStyle = '#4e342e';
+  ctx.fillRect(rx + 10, ry + rh - 18, 24, 15);
+  ctx.fillRect(rx + rw - 34, ry + rh - 18, 24, 15);
+}
+
+function renderLatrineProps(ctx, r, rx, ry, rw, rh) {
+  // Stainless Steel Sanitation Stalls
+  const stX = rx + 12;
+  const stY = ry + rh - 38;
+  ctx.fillStyle = '#2c323b';
+  ctx.fillRect(stX, stY, rw - 24, 35);
+  ctx.strokeStyle = '#434c59';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(stX, stY, rw - 24, 35);
+
+  // Stall divider door
+  ctx.fillStyle = '#1f242b';
+  ctx.fillRect(stX + 6, stY + 4, 18, 28);
+  ctx.fillStyle = '#f1c40f';
+  ctx.fillRect(stX + 22, stY + 16, 2, 4); // brass latch
+}
+
 export const ROOM_RENDERERS = {
   bunker: renderBunkerProps,
+  quarters: renderQuartersProps,
   farm: renderFarmProps,
+  hydro_uv: renderHydroUvProps,
   waterPump: renderWaterPumpProps,
   generator: renderGeneratorProps,
   kitchen: renderKitchenProps,
   armory: renderArmoryProps,
-  quarters: renderQuartersProps,
   infirmary: renderInfirmaryProps,
+  workshop: renderWorkshopProps,
   school: renderSchoolProps,
-  hydro_uv: renderHydroUvProps,
-  workshop: renderWorkshopProps
+  latrine: renderLatrineProps
 };
 
 export function drawRooms(ctx, G) {
+  if (!G.rooms) return;
+
   G.rooms.forEach(r => {
     const rx = r.x * CELL_SIZE;
     const ry = r.y * CELL_SIZE;
     const rw = r.w * CELL_SIZE;
     const rh = r.h * CELL_SIZE;
 
-    // Ambient radial light bloom into surrounding soil
-    const lampX = rx + rw / 2;
-    const lampY = ry + 6;
-    const bloom = ctx.createRadialGradient(lampX, lampY, 10, lampX, lampY, Math.max(rw, rh) * 0.85);
-    bloom.addColorStop(0, 'rgba(255, 230, 160, 0.22)');
-    bloom.addColorStop(1, 'rgba(255, 230, 160, 0)');
-    ctx.fillStyle = bloom;
-    ctx.beginPath();
-    ctx.arc(lampX, lampY, Math.max(rw, rh) * 0.85, 0, Math.PI * 2);
-    ctx.fill();
+    // 1. Draw Architectural Room Shell & Ambient Occlusion
+    renderRoomShell(ctx, r, rx, ry, rw, rh, G);
 
-    // Outer concrete / timber border
-    ctx.fillStyle = (r.type === 'farm' || (r.type === 'bunker' && r.id && r.id.includes('bunks'))) ? '#4a3325' : '#4d4841';
-    ctx.fillRect(rx - 2, ry - 2, rw + 4, rh + 4);
-
-    // Two-tone wall paint
-    ctx.fillStyle = '#dcd6c8';
-    ctx.fillRect(rx, ry, rw, rh * 0.55);
-    ctx.fillStyle = '#6e7d6b';
-    ctx.fillRect(rx, ry + rh * 0.55, rw, rh * 0.45);
-
-    // Dark trim moulding between wall colors
-    ctx.fillStyle = '#2b3026';
-    ctx.fillRect(rx, ry + rh * 0.55 - 2, rw, 3);
-
-    // Room name badge top-left
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(rx + 6, ry + 4, Math.min(rw - 12, 85), 13);
-    ctx.fillStyle = '#d4af37';
-    ctx.font = 'bold 8px sans-serif';
-    ctx.fillText(r.name, rx + 10, ry + 13);
-
-    // Warm pendant hanging lamp cone
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(lampX, ry); ctx.lineTo(lampX, lampY + 4); ctx.stroke();
-    const lGrad = ctx.createRadialGradient(lampX, lampY + 4, 2, lampX, lampY + 18, rh * 0.85);
-    lGrad.addColorStop(0, 'rgba(255, 236, 179, 0.45)');
-    lGrad.addColorStop(1, 'rgba(255, 236, 179, 0)');
-    ctx.fillStyle = lGrad;
-    ctx.beginPath();
-    ctx.moveTo(lampX, lampY + 4);
-    ctx.lineTo(rx, ry + rh);
-    ctx.lineTo(rx + rw, ry + rh);
-    ctx.closePath();
-    ctx.fill();
-
+    // 2. Draw Specific Interior Props
     const renderer = ROOM_RENDERERS[r.type] || renderBunkerProps;
     renderer(ctx, r, rx, ry, rw, rh);
   });

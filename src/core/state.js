@@ -70,6 +70,16 @@ export function createInitialState() {
       incidents: []
     },
 
+    // Audiovisual Settings & Floating Indicators
+    settings: {
+      lightingEnabled: true,
+      particlesEnabled: true,
+      soundEnabled: true,
+      sfxVol: 0.8,
+      ambVol: 0.5
+    },
+    floatingTexts: [],
+
     // World & Architecture
     rooms: [],
     blueprints: [

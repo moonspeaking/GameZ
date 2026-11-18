@@ -4,6 +4,8 @@ import { eventBus } from '../core/event_bus.js';
 import { placeBlueprint, demolishAt } from '../world/rooms.js';
 import { showColonistModal, cancelPlacement } from './modals.js';
 import { finishPrologue } from '../systems/story.js';
+import { spawnDigParticles } from '../render/particles.js';
+import { spawnFloatingText } from '../render/floating_fx.js';
 
 export function setSpeed(sp) {
   G.speed = sp;
@@ -49,7 +51,14 @@ export function handleCanvasAction(canvas, clientX, clientY) {
         G.grid[cellR][cellC] = C_EXCAVATED;
         eventBus.emit('sound', { type: 'pickaxe' });
         const bonus = G.mechanics.miningYieldBonus || 0;
-        G.res.materials = (G.res.materials || 0) + 1 + bonus;
+        const yieldAmount = 1 + bonus;
+        G.res.materials = (G.res.materials || 0) + yieldAmount;
+        if (G.particles) {
+          spawnDigParticles(G.particles, (cellC + 0.5) * CELL_SIZE, (cellR + 0.5) * CELL_SIZE);
+        }
+        if (G.floatingTexts) {
+          spawnFloatingText(G.floatingTexts, (cellC + 0.5) * CELL_SIZE, (cellR + 0.5) * CELL_SIZE, `+${yieldAmount} ⛏️`, '#f1c40f');
+        }
         eventBus.emit('hud_update');
       }
     }

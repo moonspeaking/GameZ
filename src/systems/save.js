@@ -40,6 +40,7 @@ export const SaveSystem = {
           fallen: [...(G.memorial.fallen || [])],
           incidents: (G.memorial.incidents || []).slice(-50)
         } : { fallen: [], incidents: [] },
+        settings: G.settings ? { ...G.settings } : null,
         mechanics: {
           morale: G.mechanics.morale,
           defenseRating: G.mechanics.defenseRating,
@@ -108,6 +109,7 @@ export const SaveSystem = {
       if (d.laws) G.laws = d.laws;
       if (d.research) G.research = d.research;
       if (d.memorial) G.memorial = d.memorial;
+      if (d.settings) G.settings = { ...G.settings, ...d.settings };
       updateGameModeUI();
 
       if (G.state === 'prologue') {
