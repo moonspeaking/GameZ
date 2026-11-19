@@ -213,4 +213,8 @@ export function updateHUD() {
 // Event bindings
 eventBus.on('hud_update', updateHUD);
 eventBus.on('log', addLog);
+eventBus.on('save_status', ({ text }) => {
+  const el = document.getElementById('sb-save-time');
+  if (el) el.textContent = text;
+});
 eventBus.on('toast', ({ text, style }) => showToast(text, style));

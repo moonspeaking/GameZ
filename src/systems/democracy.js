@@ -4,42 +4,9 @@ import { ROOM_CATALOG, autoPlaceRoom } from '../world/rooms.js';
 import { countRoomsByType } from './resources.js';
 import { getTotalAlivePop } from '../entities/colonists.js';
 
-export function updateGameModeUI() {
-  const btn = document.getElementById('btn-mode-indicator');
-  if (btn) {
-    if (G.gameMode === 'democracy') {
-      btn.innerHTML = '🏛️ ДЕМОКРАТИЯ ▼';
-      btn.style.color = '#2ecc71';
-      btn.style.borderColor = '#27ae60';
-      btn.style.background = '#16241a';
-    } else if (G.gameMode === 'overseer') {
-      btn.innerHTML = '👑 КОМЕНДАНТ ▼';
-      btn.style.color = '#e67e22';
-      btn.style.borderColor = '#d35400';
-      btn.style.background = '#281d14';
-    } else {
-      btn.innerHTML = '⚡ АНАРХИЯ ▼';
-      btn.style.color = '#e74c3c';
-      btn.style.borderColor = '#c0392b';
-      btn.style.background = '#281616';
-    }
-  }
-
-  ['democracy', 'overseer', 'anarchy'].forEach(m => {
-    const card = document.getElementById(`gm-card-${m}`);
-    const badge = document.getElementById(`gm-badge-${m}`);
-    const active = G.gameMode === m;
-    if (card) {
-      card.style.borderColor = active ? (m === 'democracy' ? '#2ecc71' : (m === 'overseer' ? '#e67e22' : '#e74c3c')) : '#444';
-      card.style.background = active ? '#22252f' : '#1b1d24';
-    }
-    if (badge) badge.style.display = active ? 'inline-block' : 'none';
-  });
-}
-
 export function setGameMode(mode) {
   G.gameMode = mode;
-  updateGameModeUI();
+  eventBus.emit('game_mode_changed');
   eventBus.emit('hud_update');
 
   if (mode === 'democracy') {
@@ -63,23 +30,7 @@ export function startCouncilVote(title, prompt, optA, optB, onOptionA, onOptionB
     return;
   }
 
-  const modal = document.getElementById('council-vote-modal');
-  if (!modal) {
-    eventBus.emit('modal:decision', { title, text: prompt, b1: optA, b2: optB, onAccept: onOptionA, onDecline: onOptionB });
-    return;
-  }
-
-  const tEl = document.getElementById('cv-title');
-  const pEl = document.getElementById('cv-prompt-text');
-  const dEl = document.getElementById('cv-desc-text');
-  const vEl = document.getElementById('cv-voters-count');
-  if (tEl) tEl.textContent = title || 'СОВЕТ КОЛОНИИ: ГОЛОСОВАНИЕ';
-  if (pEl) pEl.textContent = prompt;
-  if (dEl) dEl.textContent = `Вариант А: ${optA} | Вариант Б: ${optB}`;
-
   const alive = G.colonists.filter(c => c.status === 'alive');
-  if (vEl) vEl.textContent = `${alive.length} граждан`;
-
   const votes = [];
   let yesCount = 0;
   let noCount = 0;
@@ -131,60 +82,22 @@ export function startCouncilVote(title, prompt, optA, optB, onOptionA, onOptionB
     votes.push({ colonist: c, vote, quote });
   });
 
-  const listEl = document.getElementById('cv-voters-list');
-  if (listEl) {
-    listEl.innerHTML = '';
-    votes.forEach(v => {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#18191f; padding:5px 10px; border-radius:5px; border-left:3px solid ' + (v.colonist.color || '#d4af37') + ';';
-      row.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:15px;">${v.colonist.icon || '👤'}</span>
-          <div>
-            <span style="color:#fff; font-weight:bold; font-size:11px;">${v.colonist.name}</span>
-            <span style="color:#888; font-size:10px; margin-left:4px;">${v.quote}</span>
-          </div>
-        </div>
-        <span style="font-size:10px; font-weight:bold; padding:2px 7px; border-radius:3px; ${v.vote === 'A' ? 'background:rgba(46,204,113,0.2); color:#2ecc71; border:1px solid #27ae60;' : 'background:rgba(231,76,60,0.2); color:#e74c3c; border:1px solid #c0392b;'}">${v.vote === 'A' ? 'ЗА' : 'ПРОТИВ'}</span>
-      `;
-      listEl.appendChild(row);
-    });
-  }
-
-  const total = yesCount + noCount;
-  const yesPct = total > 0 ? (yesCount / total) * 100 : 50;
-  const yLbl = document.getElementById('cv-yes-label');
-  const nLbl = document.getElementById('cv-no-label');
-  const bYes = document.getElementById('cv-bar-yes');
-  const bNo = document.getElementById('cv-bar-no');
-  if (yLbl) yLbl.textContent = `ЗА: ${yesCount}`;
-  if (nLbl) nLbl.textContent = `ПРОТИВ: ${noCount}`;
-  if (bYes) bYes.style.width = `${yesPct}%`;
-  if (bNo) bNo.style.width = `${100 - yesPct}%`;
-
-  modal.style.display = 'flex';
-  eventBus.emit('sound', { type: 'tone', freq: 480, dur: 0.15, wave: 'sine', vol: 0.25 });
-
-  const btnA = document.getElementById('cv-btn-opt-a');
-  const btnB = document.getElementById('cv-btn-opt-b');
-
-  if (btnA) {
-    btnA.textContent = `👍 ГОЛОСУЮ ЗА (${optA.split(' (')[0]})`;
-    btnA.onclick = () => {
-      modal.style.display = 'none';
+  // The view renders the ballot and reports the player's own vote via cast('A'|'B').
+  const cast = (choice) => {
+    if (choice === 'A') {
       yesCount++;
       resolveVote(yesCount >= noCount);
-    };
-  }
-
-  if (btnB) {
-    btnB.textContent = `👎 ГОЛОСУЮ ПРОТИВ (${optB.split(' (')[0]})`;
-    btnB.onclick = () => {
-      modal.style.display = 'none';
+    } else {
       noCount++;
       resolveVote(yesCount > noCount);
-    };
-  }
+    }
+  };
+
+  eventBus.emit('council_vote', {
+    title, prompt, optA, optB, votes, yesCount, noCount, cast,
+    fallback: { title, text: prompt, b1: optA, b2: optB, onAccept: onOptionA, onDecline: onOptionB }
+  });
+  eventBus.emit('sound', { type: 'tone', freq: 480, dur: 0.15, wave: 'sine', vol: 0.25 });
 
   function resolveVote(passed) {
     if (passed) {

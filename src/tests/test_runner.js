@@ -17,7 +17,8 @@ import { TECH_TREE, isTechResearched, calcDailyScience, progressDailyResearch, s
 import { getColonistPerk, COLONIST_PERKS } from '../entities/colonists.js';
 import { SCAVENGE_DESTINATIONS } from '../systems/events.js';
 import { calcColonistMood, pickThought, countBrokenColonists, getMoraleTierLabel, MOOD } from '../systems/morale.js';
-import { killColonist, openMemorialModal, closeMemorialModal } from '../systems/memorial.js';
+import { killColonist } from '../systems/memorial.js';
+import { openMemorialModal, closeMemorialModal } from '../ui/memorial_view.js';
 import { getConcretePattern, getSteelPattern, getHazardPattern, getStrataPattern } from '../render/procedural_textures.js';
 import { spawnDigParticles, spawnWeldingSparks, updateParticles } from '../render/particles.js';
 import { spawnFloatingText, updateFloatingTexts } from '../render/floating_fx.js';

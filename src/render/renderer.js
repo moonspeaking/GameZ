@@ -1,3 +1,4 @@
+import { viewport } from '../core/viewport.js';
 import { G } from '../core/state.js';
 import { CELL_SIZE, SURFACE_Y } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
@@ -21,6 +22,8 @@ export function resizeCanvas() {
   if (!canvas) return;
   W = window.innerWidth;
   H = window.innerHeight;
+  viewport.w = W || 1200;
+  viewport.h = H || 700;
   canvas.width = W;
   canvas.height = H;
   ctx.imageSmoothingEnabled = false;

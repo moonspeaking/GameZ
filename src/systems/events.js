@@ -472,92 +472,31 @@ export function launchSurfaceScavenge() {
     return;
   }
 
-  const modal = document.getElementById('modal-screen');
-  if (!modal) return;
   const isNight = (G.timeHour >= 21 || G.timeHour < 6);
 
-  let destHtml = SCAVENGE_DESTINATIONS.map((d, i) => `
-    <label style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#181920; border:1px solid #3d3527; border-radius:6px; cursor:pointer; margin:4px 0;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="radio" name="scav-dest" value="${d.id}" ${i === 0 ? 'checked' : ''} style="accent-color:#d4af37;">
-        <div>
-          <div style="color:#fff; font-weight:bold; font-size:12px;">${d.name}</div>
-          <div style="color:#888; font-size:10px;">${d.desc}</div>
-        </div>
-      </div>
-      <span style="font-size:10px; font-weight:bold; padding:2px 6px; border-radius:3px; background:#222; color:#d4af37;">${d.risk}</span>
-    </label>
-  `).join('');
+  // The view collects the player's selection and calls confirm(teamIds, destId).
+  const confirm = (checked, selDest) => {
+    if (checked.length === 0 || checked.length > 3) {
+      eventBus.emit('log', '⚠ Выберите от 1 до 3 колонистов!');
+      eventBus.emit('toast', { text: '⚠ Выберите от 1 до 3 колонистов!', style: 'toast-bad' });
+      return false;
+    }
+    G.mechanics.scavengeTeam = checked;
+    G.mechanics.scavengeDestId = selDest || 'food_mart';
+    G.mechanics.scavengeDayLeft = 1 + Math.floor(Math.random() * 3);
 
-  let teamHtml = alive.map(c => `
-    <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#1a1a1f; border-radius:6px; cursor:pointer; margin:3px 0;">
-      <input type="checkbox" class="scav-check" value="${c.id}" style="accent-color:#d4af37;">
-      <span style="font-size:18px;">${c.icon}</span>
-      <span style="color:#e8d5b7; font-size:12px;">${c.name} (${c.role}) HP:${c.hp}</span>
-    </label>
-  `).join('');
+    checked.forEach(id => {
+      const c = G.colonists.find(cc => cc.id === id);
+      if (c) c.task = 'Вылазка на поверхность';
+    });
 
-  modal.innerHTML = `
-    <div style="background:#14151a; border:1px solid var(--accent-gold); border-radius:8px; padding:20px; max-width:540px; width:92%; max-height:88vh; overflow-y:auto; color:#fff;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:12px;">
-        <h2 style="color:var(--accent-gold); font-size:20px; margin:0;">🏙 ВЫЛАЗКА НА ПОВЕРХНОСТЬ</h2>
-        <span style="font-size:11px; color:${isNight ? '#e74c3c' : '#f1c40f'}; font-weight:bold;">${isNight ? '🌙 НОЧЬ (ПОВЫШЕННЫЙ РИСК)' : '☀️ ДЕНЬ'}</span>
-      </div>
+    const destObj = SCAVENGE_DESTINATIONS.find(d => d.id === selDest);
+    eventBus.emit('log', `🏙 ВЫЛАЗКА: Отряд (${checked.map(id => G.colonists.find(c => c.id === id)?.name).join(', ')}) выдвинулся в «${destObj?.name}» (≈${G.mechanics.scavengeDayLeft} дн.)`);
+    eventBus.emit('toast', { text: `🏙 Отряд отправился в «${destObj?.name}»!`, style: 'toast-gold' });
+    eventBus.emit('sound', { type: 'alert' });
+    eventBus.emit('hud_update');
+    return true;
+  };
 
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:bold; font-size:12px; color:var(--accent-gold); margin-bottom:6px;">1. ВЫБЕРИТЕ ТОЧКУ НАЗНАЧЕНИЯ:</div>
-        ${destHtml}
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <div style="font-weight:bold; font-size:12px; color:var(--accent-gold); margin-bottom:6px;">2. ВЫБЕРИТЕ ОТРЯД (1–3 ВЫЖИВШИХ):</div>
-        <div style="max-height:140px; overflow-y:auto; border:1px solid #333; border-radius:6px; padding:4px;">
-          ${teamHtml}
-        </div>
-      </div>
-
-      <div style="display:flex; gap:12px; justify-content:flex-end;">
-        <button class="modal-btn" id="m-btn-1" style="background:#27ae60; color:#fff;">ОТПРАВИТЬ ОТРЯД ▶</button>
-        <button class="modal-btn" style="background:#333; color:#fff;" id="m-btn-2">ОТМЕНА</button>
-      </div>
-    </div>
-  `;
-  modal.style.display = 'flex';
-
-  const b1 = document.getElementById('m-btn-1');
-  const b2 = document.getElementById('m-btn-2');
-
-  if (b1) {
-    b1.onclick = () => {
-      const checked = [...document.querySelectorAll('.scav-check:checked')].map(cb => cb.value);
-      if (checked.length === 0 || checked.length > 3) {
-        eventBus.emit('log', '⚠ Выберите от 1 до 3 колонистов!');
-        eventBus.emit('toast', { text: '⚠ Выберите от 1 до 3 колонистов!', style: 'toast-bad' });
-        return;
-      }
-      const selDest = document.querySelector('input[name="scav-dest"]:checked')?.value || 'food_mart';
-
-      modal.style.display = 'none';
-      G.mechanics.scavengeTeam = checked;
-      G.mechanics.scavengeDestId = selDest;
-      G.mechanics.scavengeDayLeft = 1 + Math.floor(Math.random() * 3);
-
-      checked.forEach(id => {
-        const c = G.colonists.find(cc => cc.id === id);
-        if (c) c.task = 'Вылазка на поверхность';
-      });
-
-      const destObj = SCAVENGE_DESTINATIONS.find(d => d.id === selDest);
-      eventBus.emit('log', `🏙 ВЫЛАЗКА: Отряд (${checked.map(id => G.colonists.find(c => c.id === id)?.name).join(', ')}) выдвинулся в «${destObj?.name}» (≈${G.mechanics.scavengeDayLeft} дн.)`);
-      eventBus.emit('toast', { text: `🏙 Отряд отправился в «${destObj?.name}»!`, style: 'toast-gold' });
-      eventBus.emit('sound', { type: 'alert' });
-      eventBus.emit('hud_update');
-    };
-  }
-
-  if (b2) {
-    b2.onclick = () => {
-      modal.style.display = 'none';
-    };
-  }
+  eventBus.emit('scavenge_dialog', { alive, isNight, destinations: SCAVENGE_DESTINATIONS, confirm });
 }

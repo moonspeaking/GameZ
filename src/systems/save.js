@@ -1,7 +1,6 @@
 import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
 import { calcResourceRates } from './resources.js';
-import { updateGameModeUI } from './democracy.js';
 
 export const SaveSystem = {
   KEY: 'gamez_underground_save_v2',
@@ -56,11 +55,8 @@ export const SaveSystem = {
       };
 
       localStorage.setItem(this.KEY, JSON.stringify(saveData));
-      const saveTime = document.getElementById('sb-save-time');
-      if (saveTime) {
-        const timeStr = `${G.timeHour.toString().padStart(2, '0')}:${Math.floor(G.timeMin).toString().padStart(2, '0')}`;
-        saveTime.textContent = `Д${G.day} ${timeStr}`;
-      }
+      const timeStr = `${G.timeHour.toString().padStart(2, '0')}:${Math.floor(G.timeMin).toString().padStart(2, '0')}`;
+      eventBus.emit('save_status', { text: `Д${G.day} ${timeStr}` });
 
       if (isAuto) {
         eventBus.emit('toast', { text: `💾 Автосохранение: День ${G.day}`, style: 'toast-gold' });
@@ -110,7 +106,7 @@ export const SaveSystem = {
       if (d.research) G.research = d.research;
       if (d.memorial) G.memorial = d.memorial;
       if (d.settings) G.settings = { ...G.settings, ...d.settings };
-      updateGameModeUI();
+      eventBus.emit('game_mode_changed');
 
       if (G.state === 'prologue') {
         eventBus.emit('prologue:finish');
@@ -120,10 +116,7 @@ export const SaveSystem = {
       eventBus.emit('hud_update');
       eventBus.emit('render_request');
 
-      const saveTime = document.getElementById('sb-save-time');
-      if (saveTime) {
-        saveTime.textContent = `Д${G.day} (Загружено)`;
-      }
+      eventBus.emit('save_status', { text: `Д${G.day} (Загружено)` });
 
       eventBus.emit('toast', { text: `📂 Игра успешно загружена! (День ${G.day})`, style: 'toast-good' });
       eventBus.emit('sound', { type: 'good' });

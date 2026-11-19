@@ -8,7 +8,6 @@ import { updateHUD, toggleMobileHUD, showToast, addLog } from './ui/hud.js';
 import {
   openChaptersModal, closeChaptersModal,
   openGameModeModal, closeGameModeModal,
-  openWhiteboardModal, closeWhiteboardModal,
   openSettingsModal, closeSettingsModal, applySettings,
   toggleBuildMenu, cancelPlacement
 } from './ui/modals.js';
@@ -17,8 +16,14 @@ import { startPrologue, finishPrologue, sealBulkheads, colonistsFightBreach, CHA
 import { handleLawClick } from './systems/laws.js';
 import { setGameMode } from './systems/democracy.js';
 import { launchSurfaceScavenge } from './systems/events.js';
-import { openResearchModal, closeResearchModal, startResearch } from './systems/research.js';
-import { openMemorialModal, closeMemorialModal } from './systems/memorial.js';
+import { startResearch } from './systems/research.js';
+import './ui/gamemode_view.js';
+import './ui/council_view.js';
+import './ui/story_view.js';
+import './ui/scavenge_view.js';
+import { openWhiteboardModal, closeWhiteboardModal } from './ui/laws_view.js';
+import { openResearchModal, closeResearchModal } from './ui/research_view.js';
+import { openMemorialModal, closeMemorialModal } from './ui/memorial_view.js';
 import { SaveSystem } from './systems/save.js';
 import { startLoop } from './core/loop.js';
 

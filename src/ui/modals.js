@@ -2,8 +2,7 @@ import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
 import { CHAPTERS } from '../systems/story.js';
 import { ROOM_CATALOG } from '../world/rooms.js';
-import { updateGameModeUI } from '../systems/democracy.js';
-import { renderWhiteboardLaws } from '../systems/laws.js';
+import { updateGameModeUI } from './gamemode_view.js';
 import { getColonistPerk } from '../entities/colonists.js';
 import { AudioSys } from '../audio/audio_sys.js';
 import { AmbienceEngine } from '../audio/ambience.js';
@@ -49,17 +48,6 @@ export function openGameModeModal() {
 
 export function closeGameModeModal() {
   const m = document.getElementById('gamemode-modal');
-  if (m) m.style.display = 'none';
-}
-
-export function openWhiteboardModal() {
-  renderWhiteboardLaws();
-  const m = document.getElementById('whiteboard-modal');
-  if (m) m.style.display = 'flex';
-}
-
-export function closeWhiteboardModal() {
-  const m = document.getElementById('whiteboard-modal');
   if (m) m.style.display = 'none';
 }
 

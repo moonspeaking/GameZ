@@ -2,29 +2,29 @@ import { G } from '../core/state.js';
 import { CELL_SIZE, MAP_COLS, MAP_ROWS, SURFACE_Y, C_EXCAVATED } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
 
-function safeSetText(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
+// Story UI is rendered by ui/story_view.js; this module only emits semantic events.
+function setLabel(key, text) {
+  eventBus.emit('story_label', { key, text });
+}
+
+function showInset(id) {
+  eventBus.emit('story_inset', { id });
+}
+
+function showJournal(day, body, sig) {
+  eventBus.emit('story_journal', { day, body, sig });
+}
+
+function setBreachOverlay(active) {
+  eventBus.emit('breach_overlay', { active });
 }
 
 export function hideAllStoryInsets() {
-  ['journal-note', 'whiteboard-inset', 'ration-card-inset', 'council-vote-inset', 'radio-broadcast-inset'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  const dc = document.getElementById('dialogue-card');
-  if (dc) dc.style.display = 'flex';
+  eventBus.emit('story_insets_reset');
 }
 
 export function setDialogue(avatar, name, text) {
-  const card = document.getElementById('dialogue-card');
-  const av = document.getElementById('dlg-avatar');
-  const nm = document.getElementById('dlg-name');
-  const tx = document.getElementById('dlg-text');
-  if (av) av.textContent = avatar;
-  if (nm) nm.textContent = name;
-  if (tx) tx.textContent = `"${text}"`;
-  if (card) card.style.display = 'flex';
+  eventBus.emit('story_dialogue', { avatar, name, text });
 }
 
 export function startPrologue() {
@@ -36,10 +36,7 @@ export function startPrologue() {
   G.cam.x = 0;
   G.cam.y = 0;
   hideAllStoryInsets();
-  const ro = document.getElementById('red-alert-overlay');
-  const bb = document.getElementById('breach-banner');
-  if (ro) ro.style.display = 'none';
-  if (bb) bb.style.display = 'none';
+  setBreachOverlay(false);
 
   eventBus.emit('canvas_resize');
   eventBus.emit('sound', { type: 'horde_roar' });
@@ -49,8 +46,8 @@ export function updatePrologue(dt) {
   G.prologue.t += dt;
   const t = G.prologue.t;
   const hatchX = G.prologue.hatchX;
-  const W = window.innerWidth || 1200;
-  const H = window.innerHeight || 700;
+  const W = viewport.w;
+  const H = viewport.h;
   const surfaceCamY = Math.max(0, SURFACE_Y * CELL_SIZE - H * 0.62);
 
   // Camera tracking centered on surface city streets
@@ -161,8 +158,7 @@ export function applyChapter1() {
   G.isWinterSnow = false;
   G.elevator.unlocked = false;
   G.redAlert = false;
-  const ro = document.getElementById('red-alert-overlay'); if (ro) ro.style.display = 'none';
-  const bb = document.getElementById('breach-banner'); if (bb) bb.style.display = 'none';
+  setBreachOverlay(false);
 
   const hatchCol = Math.floor(MAP_COLS / 2);
   G.rooms = [
@@ -177,13 +173,7 @@ export function applyChapter1() {
   ];
 
   hideAllStoryInsets();
-  const jn = document.getElementById('journal-note');
-  if (jn) {
-    safeSetText('jn-day', 'Day 1');
-    safeSetText('jn-body', '"A concrete room built for twenty. Four of us. We don\'t know each other\'s last names."');
-    safeSetText('jn-sig', '- NORA');
-    jn.style.display = 'block';
-  }
+  showJournal('Day 1', '"A concrete room built for twenty. Four of us. We don\'t know each other\'s last names."', '- NORA');
 
   setDialogue('⚡', 'RAY', 'Ray. Electrician. The generator works. We have light.');
   finishPrologue();
@@ -199,9 +189,9 @@ export function applyChapter2() {
   if (!G.rooms.some(r => r.id === 'farm_roots')) {
     G.rooms.push({ id: 'farm_roots', type: 'farm', name: 'MUSHROOMS', x: hatchCol - 10, y: SURFACE_Y + 5, w: 7, h: 4 });
   }
-  safeSetText('sb-const-name', 'MUSHROOMS [69%]');
-  safeSetText('sb-day-text', 'DAY 87');
-  safeSetText('top-day-pill', '⏱ DAY 87 · ROOTS & SPORES');
+  setLabel('constName', 'MUSHROOMS [69%]');
+  setLabel('dayText', 'DAY 87');
+  setLabel('dayPill', '⏱ DAY 87 · ROOTS & SPORES');
   setDialogue('🎒', 'ELI', 'The birch roots broke through the ceiling. Mushrooms are growing on the damp soil!');
   eventBus.emit('log', 'D86 ELI GOES UP FOR FOOD');
   eventBus.emit('hud_update');
@@ -214,16 +204,10 @@ export function applyChapter3() {
   G.populationOverride = 7;
   G.hasDirtMound = true;
   hideAllStoryInsets();
-  const jn = document.getElementById('journal-note');
-  if (jn) {
-    safeSetText('jn-day', 'Day 761');
-    safeSetText('jn-body', '"Knocking on the hatch at dawn. Voices. Many of them."');
-    safeSetText('jn-sig', '- NORA');
-    jn.style.display = 'block';
-  }
+  showJournal('Day 761', '"Knocking on the hatch at dawn. Voices. Many of them."', '- NORA');
 
   setDialogue('🛡️', 'MARCUS', 'We have a child with us. And hydroponics blueprints. Please let us in.');
-  safeSetText('top-day-pill', '⏱ DAY 761 · STRANGERS AT THE HATCH');
+  setLabel('dayPill', '⏱ DAY 761 · STRANGERS AT THE HATCH');
 
   G.colonists.push({ id: 'marcus', name: 'MARCUS', age: 46, role: 'GUARD', color: '#1abc9c', icon: '🛡️', hp: 100, x: 0, y: 0, status: 'alive' });
   G.colonists.push({ id: 'sarah', name: 'SARAH', age: 40, role: 'FARM', color: '#8e44ad', icon: '🌾', hp: 100, x: 0, y: 0, status: 'alive' });
@@ -251,7 +235,7 @@ export function applyChapter4() {
   G.res.water = 200;
   G.res.power = 100;
   setDialogue('⛏️', 'WALT', 'The night all the lights turned on! The underground river generates endless power.');
-  safeSetText('top-day-pill', '⏱ DAY 1160 · THE DEEP RIVER');
+  setLabel('dayPill', '⏱ DAY 1160 · THE DEEP RIVER');
   eventBus.emit('log', 'YEAR 4: DEEP RIVER REACHED. POWER TURBINES ACTIVE');
   eventBus.emit('hud_update');
 }
@@ -262,8 +246,8 @@ export function applyChapter5() {
   G.day = 2952;
   G.populationOverride = 146;
   hideAllStoryInsets();
-  const wb = document.getElementById('whiteboard-inset'); if (wb) wb.style.display = 'block';
-  const rc = document.getElementById('ration-card-inset'); if (rc) rc.style.display = 'block';
+  showInset('whiteboard-inset');
+  showInset('ration-card-inset');
 
   const hatchCol = Math.floor(MAP_COLS / 2);
   G.rooms.push({ id: 'school_hall', type: 'bunker', name: 'BELOW SCHOOL', x: hatchCol + 3, y: SURFACE_Y + 14, w: 8, h: 4 });
@@ -283,8 +267,8 @@ export function applyChapter5() {
   ];
 
   setDialogue('💉', 'NORA', '48 hours of quarantine for newcomers. No work, no second bowl. Those are the rules.');
-  safeSetText('top-day-pill', '⏱ DAY 2952 · RULES & RATIONS');
-  safeSetText('sb-const-name', 'SCHOOL [91%]');
+  setLabel('dayPill', '⏱ DAY 2952 · RULES & RATIONS');
+  setLabel('constName', 'SCHOOL [91%]');
   eventBus.emit('log', 'YEAR 9: WHITEBOARD RULES RATIFIED. RATION CARDS ISSUED');
   eventBus.emit('hud_update');
 }
@@ -295,15 +279,14 @@ export function applyChapter6() {
   G.day = 4596;
   G.populationOverride = 210;
   hideAllStoryInsets();
-  const cv = document.getElementById('council-vote-inset'); if (cv) cv.style.display = 'block';
+  showInset('council-vote-inset');
   G.redAlert = true;
-  const ro = document.getElementById('red-alert-overlay'); if (ro) ro.style.display = 'block';
-  const bb = document.getElementById('breach-banner'); if (bb) bb.style.display = 'flex';
+  setBreachOverlay(true);
   eventBus.emit('sound', { type: 'siren' });
   G.shake = 18;
 
   setDialogue('🛡️', 'MARCUS', 'Breach in the eastern tunnel! The horde broke through the old subway!');
-  safeSetText('top-day-pill', '⏱ DAY 4596 · THE BREACH');
+  setLabel('dayPill', '⏱ DAY 4596 · THE BREACH');
   eventBus.emit('log', 'YEAR 13: BREACH IN UPPER MINE! RED ALERT!');
   eventBus.emit('hud_update');
 }
@@ -314,14 +297,14 @@ export function applyChapter7() {
   G.day = 5101;
   G.populationOverride = 168;
   hideAllStoryInsets();
-  const rb = document.getElementById('radio-broadcast-inset'); if (rb) rb.style.display = 'block';
+  showInset('radio-broadcast-inset');
   G.elevator.unlocked = true;
   const eli = G.colonists.find(c => c.id === 'eli');
   if (eli) eli.status = 'dead';
   eventBus.emit('sound', { type: 'elevator_hum' });
 
   setDialogue('📻', 'MARCUS', 'The council is suspended. Until this city is safe, the Security Council governs.');
-  safeSetText('top-day-pill', '⏱ DAY 5101 · TWO CITIES');
+  setLabel('dayPill', '⏱ DAY 5101 · TWO CITIES');
   eventBus.emit('log', 'YEAR 14: TWO CITIES SPLIT. ELEVATOR ONLINE');
   eventBus.emit('hud_update');
 }
@@ -336,17 +319,10 @@ export function applyChapter8() {
   G.isWinterSnow = true;
   G.elevator.unlocked = true;
   G.redAlert = false;
-  const ro = document.getElementById('red-alert-overlay'); if (ro) ro.style.display = 'none';
-  const bb = document.getElementById('breach-banner'); if (bb) bb.style.display = 'none';
+  setBreachOverlay(false);
 
   hideAllStoryInsets();
-  const jn = document.getElementById('journal-note');
-  if (jn) {
-    safeSetText('jn-day', 'Day 10,657');
-    safeSetText('jn-body', '"Snow on the surface. We can see it on the cameras. None of our children have ever touched it."');
-    safeSetText('jn-sig', '- NORA (ELDER)');
-    jn.style.display = 'block';
-  }
+  showJournal('Day 10,657', '"Snow on the surface. We can see it on the cameras. None of our children have ever touched it."', '- NORA (ELDER)');
 
   G.colonists = [
     { id: 'ray', name: 'RAY', age: 71, role: 'ELEC', color: '#7f8c8d', icon: '⚡', hp: 0, x: 0, y: 0, status: 'dead' },
@@ -359,24 +335,14 @@ export function applyChapter8() {
   ];
 
   setDialogue('👵', 'NORA (ELDER)', 'Year 30. 473 of us now. We carved an entire civilization out of bedrock.');
-  safeSetText('top-day-pill', '⏱ DAY 10,657 · THE CITY BELOW (ГОД 30)');
+  setLabel('dayPill', '⏱ DAY 10,657 · THE CITY BELOW (ГОД 30)');
   eventBus.emit('log', 'YEAR 30: 6-TIER METROPOLIS WITH 473 CITIZENS');
   eventBus.emit('hud_update');
 }
 
 export function triggerVictory() {
   G.won = true;
-  const modal = document.getElementById('modal-screen');
-  if (modal) {
-    modal.innerHTML = `
-      <h1 style="color:var(--accent-gold); font-size:36px; margin-bottom:14px;">ПОБЕДА: 30 ЛЕТ ПОД ЗЕМЛЕЙ!</h1>
-      <p style="color:#cfbfad; font-size:15px; max-width:540px; text-align:center; line-height:1.8; margin-bottom:28px;">
-        Четверо незнакомцев построили целый подземный мегаполис и сберегли огонь цивилизации под ордой зомби!
-      </p>
-      <button class="modal-btn" onclick="location.reload()">НАЧАТЬ ЗАНОВО</button>
-    `;
-    modal.style.display = 'flex';
-  }
+  eventBus.emit('victory');
 }
 
 export function applyChapter9() {
@@ -411,8 +377,7 @@ export const CHAPTERS = [
 
 export function sealBulkheads() {
   G.redAlert = false;
-  const ro = document.getElementById('red-alert-overlay'); if (ro) ro.style.display = 'none';
-  const bb = document.getElementById('breach-banner'); if (bb) bb.style.display = 'none';
+  setBreachOverlay(false);
   eventBus.emit('log', '🛡 Бронезаслонки запечатаны! Орда заблокирована в верхнем шлюзе.');
   eventBus.emit('toast', { text: '🛡 Бронезаслонки запечатаны! Внутренний город в безопасности.', style: 'toast-good' });
   eventBus.emit('sound', { type: 'metal_clang' });
@@ -421,8 +386,7 @@ export function sealBulkheads() {
 
 export function colonistsFightBreach() {
   G.redAlert = false;
-  const ro = document.getElementById('red-alert-overlay'); if (ro) ro.style.display = 'none';
-  const bb = document.getElementById('breach-banner'); if (bb) bb.style.display = 'none';
+  setBreachOverlay(false);
 
   if ((G.res.ammo || 0) >= 15) {
     G.res.ammo = Math.max(0, G.res.ammo - 15);
