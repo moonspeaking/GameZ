@@ -1,4 +1,5 @@
 import { G } from '../core/state.js';
+import { MAP_COLS } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
 import { calcResourceRates } from './resources.js';
 
@@ -85,6 +86,11 @@ export const SaveSystem = {
       }
 
       const d = JSON.parse(raw);
+      if (d.grid && d.grid[0] && d.grid[0].length !== MAP_COLS) {
+        eventBus.emit('toast', { text: '⚠ Сохранение от старой версии карты (другая ширина) — загрузка невозможна', style: 'toast-bad' });
+        eventBus.emit('sound', { type: 'bad' });
+        return false;
+      }
       G.day = d.day || 1;
       G.timeHour = d.timeHour ?? 12;
       G.timeMin = d.timeMin ?? 0;

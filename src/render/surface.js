@@ -136,6 +136,25 @@ export function drawSurfaceWorld(ctx, G) {
     ctx.fillRect(bx, skyH - bh, 70, bh);
   }
 
+  // Distant filler buildings so the wider map still reads as a town (the detailed block sits around the hatch)
+  {
+    const palette = ['#7c6a5a', '#6a6f78', '#8a7260', '#5f6670', '#85796a'];
+    const edgeL = hatchX - 520, edgeR = hatchX + 700;
+    for (let i = 0, bx = -560; bx < MAP_COLS * CELL_SIZE + 560; i++, bx += 70 + (i * 37) % 50) {
+      if (bx > edgeL && bx < edgeR) continue;
+      const bw = 60 + (i * 53) % 40;
+      const bh = 70 + (i * 29) % 90;
+      ctx.fillStyle = palette[i % palette.length];
+      ctx.fillRect(bx, skyH - bh, bw, bh);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.fillRect(bx + bw - 10, skyH - bh, 10, bh);
+      ctx.fillStyle = '#25272c';
+      for (let wy = skyH - bh + 10; wy < skyH - 18; wy += 24) {
+        for (let wx = bx + 8; wx < bx + bw - 18; wx += 20) ctx.fillRect(wx, wy, 9, 13);
+      }
+    }
+  }
+
   // Sun by day, moon by night (behind the buildings)
   {
     const isNight = G.timeHour >= 21 || G.timeHour < 5;

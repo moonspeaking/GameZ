@@ -99,35 +99,46 @@ export function finishPrologue() {
 
 export function populateFullMetropolis() {
   const hatchCol = Math.floor(MAP_COLS / 2);
+  // Wide layout: two rooms per side on most tiers, joined to the shaft by long galleries (see getCorridors)
+  const h = hatchCol;
+  const T = (n) => SURFACE_Y + n;
   G.rooms = [
     // Tier 1 (-15m)
-    { id: 'shelter_main', type: 'bunker', name: 'SHELTER 4', x: hatchCol - 6, y: SURFACE_Y + 4, w: 12, h: 4 },
-    { id: 'latrine_1', type: 'waterPump', name: 'WATER FILTER', x: hatchCol - 13, y: SURFACE_Y + 4, w: 6, h: 4 },
-    { id: 'bunks_founders', type: 'bunker', name: 'FOUNDERS BUNK', x: hatchCol + 7, y: SURFACE_Y + 4, w: 8, h: 4 },
+    { id: 'shelter_main', type: 'bunker', name: 'SHELTER 4', x: h - 6, y: T(4), w: 12, h: 4 },
+    { id: 'latrine_1', type: 'waterPump', name: 'WATER FILTER', x: h - 20, y: T(4), w: 6, h: 4 },
+    { id: 'bunks_founders', type: 'bunker', name: 'FOUNDERS BUNK', x: h + 14, y: T(4), w: 8, h: 4 },
 
     // Tier 2 (-25m)
-    { id: 'farm_roots', type: 'farm', name: 'MUSHROOM ROOTS', x: hatchCol - 12, y: SURFACE_Y + 9, w: 10, h: 4 },
-    { id: 'kitchen_mess', type: 'bunker', name: 'CENTRAL MESS', x: hatchCol + 3, y: SURFACE_Y + 9, w: 10, h: 4 },
+    { id: 'cold_store', type: 'kitchen', name: 'COLD STORAGE', x: h - 29, y: T(9), w: 7, h: 4 },
+    { id: 'farm_roots', type: 'farm', name: 'MUSHROOM ROOTS', x: h - 17, y: T(9), w: 10, h: 4 },
+    { id: 'kitchen_mess', type: 'bunker', name: 'CENTRAL MESS', x: h + 7, y: T(9), w: 10, h: 4 },
+    { id: 'water_tanks', type: 'waterPump', name: 'WATER TANKS', x: h + 22, y: T(9), w: 8, h: 4 },
 
     // Tier 3 (-38m)
-    { id: 'dorm_upper', type: 'bunker', name: 'DORMITORY A', x: hatchCol - 15, y: SURFACE_Y + 15, w: 13, h: 4 },
-    { id: 'school_hall', type: 'bunker', name: 'BELOW SCHOOL', x: hatchCol + 3, y: SURFACE_Y + 15, w: 8, h: 4 },
-    { id: 'clinic_nora', type: 'bunker', name: 'CLINIC (NORA)', x: hatchCol + 12, y: SURFACE_Y + 15, w: 6, h: 4 },
+    { id: 'dorm_b', type: 'quarters', name: 'DORMITORY B', x: h - 31, y: T(15), w: 10, h: 4 },
+    { id: 'dorm_upper', type: 'bunker', name: 'DORMITORY A', x: h - 17, y: T(15), w: 13, h: 4 },
+    { id: 'school_hall', type: 'school', name: 'BELOW SCHOOL', x: h + 6, y: T(15), w: 8, h: 4 },
+    { id: 'clinic_nora', type: 'infirmary', name: 'CLINIC (NORA)', x: h + 18, y: T(15), w: 6, h: 4 },
 
     // Tier 4 (-50m)
-    { id: 'workshop_ray', type: 'bunker', name: 'RAY WORKSHOP', x: hatchCol - 14, y: SURFACE_Y + 21, w: 12, h: 4 },
-    { id: 'armory_marcus', type: 'bunker', name: 'ARMORY & GUARD', x: hatchCol + 3, y: SURFACE_Y + 21, w: 10, h: 4 },
+    { id: 'forge', type: 'workshop', name: 'FORGE', x: h - 30, y: T(21), w: 9, h: 4 },
+    { id: 'workshop_ray', type: 'bunker', name: 'RAY WORKSHOP', x: h - 17, y: T(21), w: 12, h: 4 },
+    { id: 'armory_marcus', type: 'bunker', name: 'ARMORY & GUARD', x: h + 6, y: T(21), w: 10, h: 4 },
+    { id: 'range', type: 'armory', name: 'SHOOTING RANGE', x: h + 21, y: T(21), w: 9, h: 4 },
 
     // Tier 5 (-65m)
-    { id: 'subway_depot', type: 'bunker', name: 'SUBWAY DEPOT', x: hatchCol - 16, y: SURFACE_Y + 28, w: 14, h: 4 },
-    { id: 'hydro_uv', type: 'farm', name: 'UV HYDROPONICS', x: hatchCol + 3, y: SURFACE_Y + 28, w: 12, h: 4 },
+    { id: 'motor_pool', type: 'generator', name: 'MOTOR POOL', x: h - 30, y: T(28), w: 8, h: 4 },
+    { id: 'subway_depot', type: 'bunker', name: 'SUBWAY DEPOT', x: h - 19, y: T(28), w: 14, h: 4 },
+    { id: 'hydro_uv', type: 'farm', name: 'UV HYDROPONICS', x: h + 6, y: T(28), w: 12, h: 4 },
+    { id: 'seed_vault', type: 'farm', name: 'SEED VAULT', x: h + 22, y: T(28), w: 8, h: 4 },
 
     // Tier 6 (-78m)
-    { id: 'hydro_pump', type: 'waterPump', name: 'HYDRO TURBINES', x: hatchCol - 10, y: 43, w: 9, h: 4 },
-    { id: 'radio_room', type: 'bunker', name: 'RADIO ROOM', x: hatchCol + 3, y: 43, w: 8, h: 4 },
+    { id: 'hydro_pump', type: 'waterPump', name: 'HYDRO TURBINES', x: h - 14, y: 43, w: 9, h: 4 },
+    { id: 'radio_room', type: 'bunker', name: 'RADIO ROOM', x: h + 6, y: 43, w: 8, h: 4 },
+    { id: 'server_room', type: 'workshop', name: 'SERVER ROOM', x: h + 19, y: 43, w: 7, h: 4 },
 
     // Tier 7 (-95m)
-    { id: 'vault_zero', type: 'bunker', name: 'VAULT ZERO GATE', x: hatchCol - 6, y: 52, w: 12, h: 4 }
+    { id: 'vault_zero', type: 'bunker', name: 'VAULT ZERO GATE', x: h - 6, y: 52, w: 12, h: 4 }
   ];
 
   for (let r = SURFACE_Y + 1; r <= 56; r++) {
@@ -190,7 +201,7 @@ export function applyChapter2() {
   G.populationOverride = 4;
   const hatchCol = Math.floor(MAP_COLS / 2);
   if (!G.rooms.some(r => r.id === 'farm_roots')) {
-    G.rooms.push({ id: 'farm_roots', type: 'farm', name: 'MUSHROOMS', x: hatchCol - 10, y: SURFACE_Y + 5, w: 7, h: 4 });
+    G.rooms.push({ id: 'farm_roots', type: 'farm', name: 'MUSHROOMS', x: hatchCol - 16, y: SURFACE_Y + 4, w: 7, h: 4 });
   }
   setLabel('constName', 'MUSHROOMS [69%]');
   setLabel('dayText', 'DAY 87');
@@ -233,7 +244,7 @@ export function applyChapter4() {
     }
   }
   if (!G.rooms.some(r => r.id === 'hydro_pump')) {
-    G.rooms.push({ id: 'hydro_pump', type: 'waterPump', name: 'HYDRO TURBINES', x: hatchCol - 8, y: 43, w: 7, h: 4 });
+    G.rooms.push({ id: 'hydro_pump', type: 'waterPump', name: 'HYDRO TURBINES', x: hatchCol - 14, y: 43, w: 7, h: 4 });
   }
   G.res.water = 200;
   G.res.power = 100;
@@ -253,8 +264,8 @@ export function applyChapter5() {
   showInset('ration-card-inset');
 
   const hatchCol = Math.floor(MAP_COLS / 2);
-  G.rooms.push({ id: 'school_hall', type: 'bunker', name: 'BELOW SCHOOL', x: hatchCol + 3, y: SURFACE_Y + 14, w: 8, h: 4 });
-  G.rooms.push({ id: 'clinic_nora', type: 'bunker', name: 'CLINIC (NORA)', x: hatchCol - 12, y: SURFACE_Y + 14, w: 7, h: 4 });
+  G.rooms.push({ id: 'school_hall', type: 'bunker', name: 'BELOW SCHOOL', x: hatchCol + 8, y: SURFACE_Y + 14, w: 8, h: 4 });
+  G.rooms.push({ id: 'clinic_nora', type: 'bunker', name: 'CLINIC (NORA)', x: hatchCol - 15, y: SURFACE_Y + 14, w: 7, h: 4 });
 
   const walt = G.colonists.find(c => c.id === 'walt');
   if (walt) walt.status = 'dead';

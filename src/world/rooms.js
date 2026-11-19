@@ -180,7 +180,11 @@ export function autoPlaceRoom(roomDef) {
   let bestCol = -1, bestRow = -1;
 
   for (let r = SURFACE_Y + 4; r < MAP_ROWS - 6; r += 2) {
-    const sides = [hatchCol + 3, hatchCol - roomDef.w - 1];
+    // Try the nearest free slot first, then further out: each gap becomes a gallery (getCorridors)
+    const sides = [];
+    for (const gap of [4, 8, 13, 19]) {
+      sides.push(hatchCol + 2 + gap, hatchCol - gap - roomDef.w);
+    }
     for (const c of sides) {
       if (isValidPlacement(roomDef, c, r)) {
         bestCol = c;

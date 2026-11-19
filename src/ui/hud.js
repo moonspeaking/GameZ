@@ -217,8 +217,12 @@ export function updateHUD() {
 eventBus.on('hud_update', updateHUD);
 eventBus.on('zoom_changed', () => setElText('tb-zoom-label', `${Math.round((G.cam.zoom || 1) * 100)}%`));
 eventBus.on('log', addLog);
+// Accepts { text, style } or the legacy (text, style) form
+eventBus.on('toast', (arg, style) => {
+  if (typeof arg === 'string') showToast(arg, style);
+  else showToast(arg.text, arg.style);
+});
 eventBus.on('save_status', ({ text }) => {
   const el = document.getElementById('sb-save-time');
   if (el) el.textContent = text;
 });
-eventBus.on('toast', ({ text, style }) => showToast(text, style));

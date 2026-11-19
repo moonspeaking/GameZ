@@ -2,7 +2,7 @@
  * Core game constants and tile types.
  */
 export const CELL_SIZE = 32;
-export const MAP_COLS = 42;
+export const MAP_COLS = 64;
 export const MAP_ROWS = 65;
 export const SURFACE_Y = 8; // Surface road height in cells
 
