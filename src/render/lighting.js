@@ -20,7 +20,7 @@ export function resizeLighting(w, h) {
   lightCanvas.height = h;
 }
 
-export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
+export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) {
   if (!G.settings?.lightingEnabled) return;
   if (!lightCanvas || !lightCtx) initLighting();
   if (!lightCanvas) return;
@@ -31,6 +31,10 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
   }
 
   const lCtx = lightCtx;
+  lCtx.setTransform(1, 0, 0, 1, 0, 0);
+  // World-space extents of the viewport (used for culling once the zoom transform is on)
+  const worldW = viewW / zoom;
+  const worldH = viewH / zoom;
   const isBlackout = (G.res && G.res.energy <= 0);
   const isRedAlert = !!G.redAlert;
   const timeHour = G.timeHour ?? 12;
@@ -43,7 +47,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
   lCtx.fillRect(0, 0, viewW, viewH);
 
   // Surface sky cutout (let sunlight or moonlight through)
-  const surfaceScreenY = Math.floor(SURFACE_Y * CELL_SIZE - camY);
+  const surfaceScreenY = Math.floor((SURFACE_Y * CELL_SIZE - camY) * zoom);
   if (surfaceScreenY > 0) {
     const skyAlpha = isNight ? 0.65 : (G.isWinterSnow ? 0.25 : 0.05);
     lCtx.clearRect(0, 0, viewW, Math.min(viewH, surfaceScreenY));
@@ -51,8 +55,9 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
     lCtx.fillRect(0, 0, viewW, Math.min(viewH, surfaceScreenY));
   }
 
-  // 2. Cut holes in darkness for all light sources (destination-out)
+  // 2. Cut holes in darkness for all light sources (destination-out), in zoomed world space
   lCtx.globalCompositeOperation = 'destination-out';
+  lCtx.setTransform(zoom, 0, 0, zoom, 0, 0);
 
   // Room Light Fixtures
   if (G.rooms && Array.isArray(G.rooms)) {
@@ -64,7 +69,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
       const rh = r.h * CELL_SIZE;
 
       // Check view frustum
-      if (rx + rw < -100 || rx > viewW + 100 || ry + rh < -100 || ry > viewH + 100) return;
+      if (rx + rw < -100 || rx > worldW + 100 || ry + rh < -100 || ry > worldH + 100) return;
 
       if (isBlackout) {
         // Only dim emergency red diode in ceiling center
@@ -106,7 +111,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
   const floors = [SURFACE_Y + 4, SURFACE_Y + 9, SURFACE_Y + 14, SURFACE_Y + 21, SURFACE_Y + 28, 43];
   floors.forEach(fr => {
     const fy = fr * CELL_SIZE + CELL_SIZE * 4 - 8 - camY;
-    if (fy >= -50 && fy <= viewH + 50) {
+    if (fy >= -50 && fy <= worldH + 50) {
       const grad = lCtx.createRadialGradient(shaftScreenX, fy, 4, shaftScreenX, fy, 55);
       grad.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
       grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -163,7 +168,8 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
   // 3. Additive Warm/Cold Color Tinting pass over the cutouts (lighter)
   lCtx.globalCompositeOperation = 'source-over';
 
-  // Red Alert or Blackout tint
+  // Red Alert or Blackout tint (full-screen, so draw in screen space)
+  lCtx.setTransform(1, 0, 0, 1, 0, 0);
   if (isRedAlert) {
     const pulse = (Math.sin(Date.now() * 0.008) + 1) * 0.5;
     lCtx.fillStyle = `rgba(220, 20, 20, ${0.15 + pulse * 0.22})`;
@@ -173,7 +179,8 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
     lCtx.fillRect(0, 0, viewW, viewH);
   }
 
-  // Room colored lighting tints (warm tungsten, purple grow, cyan clinic)
+  // Room colored lighting tints (warm tungsten, purple grow, cyan clinic) in zoomed world space
+  lCtx.setTransform(zoom, 0, 0, zoom, 0, 0);
   if (!isBlackout && G.rooms) {
     G.rooms.forEach(r => {
       if (r.state === 'blueprint') return;
@@ -194,6 +201,8 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH) {
       lCtx.fillRect(rx, ry, rw, rh);
     });
   }
+
+  lCtx.setTransform(1, 0, 0, 1, 0, 0);
 
   // 4. Finally, blend the composite lightmap onto the game canvas
   ctx.save();

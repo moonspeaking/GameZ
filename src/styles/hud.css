@@ -291,3 +291,50 @@
   background: rgba(212, 175, 55, 0.15);
   pointer-events: none;
 }
+
+/* ── Compact controls (governance, speed, menu) ───────────────────── */
+.sb-controls { padding: 8px 12px; background: #18191d; border-bottom: 1px solid #28292e; }
+.sb-ctl-row { display: flex; align-items: center; gap: 6px; }
+.sb-mode-btn {
+  flex: 1; min-width: 0; padding: 4px 6px; font-size: 10px; font-weight: bold;
+  background: #16241a; color: #2ecc71; border: 1px solid #27ae60; border-radius: 4px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-speed-group { display: flex; gap: 2px; }
+.sb-speed-btn {
+  padding: 3px 6px; font-size: 10px; background: #222; color: #aaa;
+  border: 1px solid #444; border-radius: 3px; cursor: pointer;
+}
+.sb-speed-btn.active { background: var(--accent-gold); color: #111; border-color: var(--accent-gold); font-weight: bold; }
+.sb-menu-btn {
+  padding: 2px 8px; font-size: 14px; line-height: 1.2; background: #25262c; color: #e0e0e0;
+  border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;
+}
+.sb-menu-btn.open { background: #3a3225; color: var(--accent-gold); }
+.sb-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #28292e; }
+.sb-menu-item {
+  padding: 6px 4px; font-size: 10px; font-weight: bold; text-align: center;
+  background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;
+}
+.sb-menu-item:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.sb-save-time { grid-column: 1 / -1; font-size: 9px; color: #666; text-align: center; }
+
+/* ── Bottom toolbar over the map (build / dig / demolish / zoom) ──── */
+#bottom-toolbar {
+  position: fixed; left: 270px; bottom: 20px; z-index: 90;
+  display: flex; align-items: center; gap: 4px; padding: 5px 6px;
+  background: rgba(20, 21, 25, 0.92); border: 1px solid #33353c; border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+}
+.tb-btn {
+  padding: 6px 10px; font-size: 11px; font-weight: bold; white-space: nowrap;
+  background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 4px; cursor: pointer;
+}
+.tb-btn:hover, .tb-btn.active { border-color: var(--accent-gold); color: var(--accent-gold); }
+.tb-danger { color: #e74c3c; border-color: #5c2828; }
+.tb-sep { width: 1px; align-self: stretch; background: #33353c; margin: 0 4px; }
+#tb-zoom-label { min-width: 46px; font-family: monospace; }
+body.prologue-active #bottom-toolbar { display: none; }
+body:not(.prologue-active) #prologue-skip-btn { display: none; }
+.sb-speed-btn { padding: 3px 5px; }
+.sb-mode-btn { font-size: 9px; }

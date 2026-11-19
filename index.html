@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/modals.css">
 <link rel="stylesheet" href="src/styles/mobile.css">
 </head>
-<body>
+<body class="prologue-active">
 
 <canvas id="game-canvas"></canvas>
 
@@ -102,6 +102,17 @@
   </div>
 </div>
 
+<!-- Build / dig / demolish tools and zoom, bottom of the map view -->
+<div id="bottom-toolbar">
+  <button class="tb-btn" onclick="toggleBuildMenu()" id="btn-tool-build">🏗️ Строить</button>
+  <button class="tb-btn" onclick="setToolMode('dig')" id="btn-tool-dig">⛏️ Копать</button>
+  <button class="tb-btn tb-danger" onclick="setToolMode('demolish')" id="btn-tool-demo">💥 Снос</button>
+  <span class="tb-sep"></span>
+  <button class="tb-btn" onclick="zoomOut()" title="Отдалить (-)">➖</button>
+  <button class="tb-btn" onclick="zoomIn()" title="Приблизить (+)">➕</button>
+  <button class="tb-btn" onclick="zoomReset()" title="Сбросить масштаб" id="tb-zoom-label">80%</button>
+</div>
+
 <!-- Skip Prologue Button -->
 <button id="prologue-skip-btn" onclick="finishPrologue()">СПУСТИТЬСЯ В ШАХТУ ▶ (Пробел)</button>
 
@@ -135,35 +146,30 @@
     </div>
   </div>
 
-  <!-- Controls inside Sidebar HUD -->
-  <div class="sb-section" style="padding: 6px 12px; background: #18191d; border-bottom: 1px solid #28292e;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-      <button class="flt-btn" onclick="openChaptersModal()" style="padding: 4px 6px; font-size: 10px; background: #2a2b30; color: var(--accent-gold); border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer;">⏳ ГЛАВЫ ▼</button>
-      <button class="flt-btn" id="btn-mode-indicator" onclick="openGameModeModal()" style="padding: 4px 8px; font-size: 10px; background: #16241a; color: #2ecc71; border: 1px solid #27ae60; border-radius: 4px; font-weight: bold; cursor: pointer;">🏛️ ДЕМОКРАТИЯ ▼</button>
-      <div style="display:flex; gap: 4px;">
-        <button class="flt-btn active" onclick="setSpeed(1)" id="flt-1x" style="padding: 3px 6px; font-size: 10px; background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; cursor: pointer;">1x</button>
-        <button class="flt-btn" onclick="setSpeed(2)" id="flt-2x" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">2x</button>
-        <button class="flt-btn" onclick="setSpeed(5)" id="flt-5x" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">5x</button>
-        <button class="flt-btn" onclick="setSpeed(30)" id="flt-30x" style="padding: 3px 6px; font-size: 10px; background: #222; color: var(--accent-gold); border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer;">⚡30x</button>
-        <button class="flt-btn" onclick="setSpeed(0)" id="flt-p" style="padding: 3px 6px; font-size: 10px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 3px; cursor: pointer;">⏸</button>
+  <!-- Controls: governance, game speed, main menu -->
+  <div class="sb-section sb-controls">
+    <div class="sb-ctl-row">
+      <button class="sb-mode-btn" id="btn-mode-indicator" onclick="openGameModeModal()">🏛️ ДЕМОКРАТИЯ ▼</button>
+      <div class="sb-speed-group">
+        <button class="sb-speed-btn active" onclick="setSpeed(1)" id="flt-1x">1x</button>
+        <button class="sb-speed-btn" onclick="setSpeed(2)" id="flt-2x">2x</button>
+        <button class="sb-speed-btn" onclick="setSpeed(5)" id="flt-5x">5x</button>
+        <button class="sb-speed-btn" onclick="setSpeed(30)" id="flt-30x">⚡30x</button>
+        <button class="sb-speed-btn" onclick="setSpeed(0)" id="flt-p">⏸</button>
       </div>
+      <button class="sb-menu-btn" id="btn-main-menu" onclick="toggleMainMenu()" title="Меню">☰</button>
     </div>
-    <div style="display:flex; gap: 4px; justify-content:space-between; flex-wrap:wrap;">
-      <button onclick="toggleBuildMenu()" id="btn-tool-build" style="flex:1; min-width:48px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;">🏗️ Строить</button>
-      <button onclick="setToolMode('dig')" id="btn-tool-dig" style="flex:1; min-width:48px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e0e0e0; border: 1px solid #3d3e45; border-radius: 3px; cursor: pointer;">⛏️ Копать</button>
-      <button onclick="setToolMode('demolish')" id="btn-tool-demo" style="flex:1; min-width:44px; padding: 4px 0; font-size: 10px; background: #25262c; color: #e74c3c; border: 1px solid #5c2828; border-radius: 3px; cursor: pointer;">💥 Снос</button>
-      <button onclick="openWhiteboardModal()" id="btn-whiteboard-rules" style="flex:1; min-width:54px; padding: 4px 0; font-size: 10px; background: #3a3225; color: #f1c40f; border: 1px solid #8d6e3f; border-radius: 3px; cursor: pointer; font-weight:bold;">📋 Законы</button>
-      <button onclick="openResearchModal()" id="btn-research" style="flex:1; min-width:50px; padding: 4px 0; font-size: 10px; background: #1a2a3a; color: #38bdf8; border: 1px solid #0284c7; border-radius: 3px; cursor: pointer; font-weight:bold;">🔬 Наука</button>
-      <button onclick="openMemorialModal()" id="btn-memorial" style="flex:1; min-width:50px; padding: 4px 0; font-size: 10px; background: #1a1215; color: #c084fc; border: 1px solid #6b21a8; border-radius: 3px; cursor: pointer; font-weight:bold;">⚰ Память</button>
-      <button onclick="launchSurfaceScavenge()" id="btn-tool-scav" style="flex:1.2; min-width:62px; padding: 4px 0; font-size: 10px; background: #2d1e3a; color: #d4a5ff; border: 1px solid #6b3e8a; border-radius: 3px; cursor: pointer; font-weight:bold;">🏙 Вылазка</button>
-    </div>
-    <!-- LocalStorage Save System Buttons -->
-    <div style="display:flex; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #222;">
-      <button onclick="SaveSystem.saveGame(false)" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 3px; cursor: pointer; font-weight: bold;">💾 Сохранить</button>
-      <button onclick="SaveSystem.loadGame()" style="flex:1; padding: 4px 0; font-size: 10px; background: #1e293b; color: #34d399; border: 1px solid #059669; border-radius: 3px; cursor: pointer; font-weight: bold;">📂 Загрузить</button>
-      <button onclick="openSettingsModal()" id="btn-settings" style="flex:0.8; padding: 4px 0; font-size: 10px; background: #262930; color: #f1c40f; border: 1px solid #635832; border-radius: 3px; cursor: pointer; font-weight: bold;">⚙️ Опции</button>
-      <button onclick="SaveSystem.resetGame()" style="flex:0.6; padding: 4px 0; font-size: 10px; background: #291e1e; color: #f87171; border: 1px solid #b91c1c; border-radius: 3px; cursor: pointer;">🔄</button>
-      <span id="sb-save-time" style="font-size:9px; color:#666; align-self:center; margin-left:4px;">Авто</span>
+    <div class="sb-menu" id="main-menu" style="display:none;">
+      <button class="sb-menu-item" onclick="openChaptersModal()">⏳ ГЛАВЫ ▼</button>
+      <button class="sb-menu-item" onclick="openWhiteboardModal()" id="btn-whiteboard-rules">📋 Законы</button>
+      <button class="sb-menu-item" onclick="openResearchModal()" id="btn-research">🔬 Наука</button>
+      <button class="sb-menu-item" onclick="openMemorialModal()" id="btn-memorial">⚰ Память</button>
+      <button class="sb-menu-item" onclick="launchSurfaceScavenge()" id="btn-tool-scav">🏙 Вылазка</button>
+      <button class="sb-menu-item" onclick="SaveSystem.saveGame(false)">💾 Сохранить</button>
+      <button class="sb-menu-item" onclick="SaveSystem.loadGame()">📂 Загрузить</button>
+      <button class="sb-menu-item" onclick="openSettingsModal()" id="btn-settings">⚙️ Опции</button>
+      <button class="sb-menu-item" onclick="SaveSystem.resetGame()">🔄</button>
+      <span id="sb-save-time" class="sb-save-time">Авто</span>
     </div>
   </div>
 

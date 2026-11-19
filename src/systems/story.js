@@ -1,6 +1,8 @@
 import { G } from '../core/state.js';
 import { CELL_SIZE, MAP_COLS, MAP_ROWS, SURFACE_Y, C_EXCAVATED } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
+import { viewport } from '../core/viewport.js';
+import { GAME_DEFAULT_ZOOM, centerOn } from '../core/camera.js';
 
 // Story UI is rendered by ui/story_view.js; this module only emits semantic events.
 function setLabel(key, text) {
@@ -35,10 +37,12 @@ export function startPrologue() {
   G.shake = 0;
   G.cam.x = 0;
   G.cam.y = 0;
+  G.cam.zoom = 1;
   hideAllStoryInsets();
   setBreachOverlay(false);
 
   eventBus.emit('canvas_resize');
+  eventBus.emit('hud_update');
   eventBus.emit('sound', { type: 'horde_roar' });
 }
 
@@ -84,11 +88,10 @@ export function finishPrologue() {
   G.state = 'game';
   eventBus.emit('canvas_resize');
   const hatchCol = Math.floor(MAP_COLS / 2);
-  const W = window.innerWidth || 1200;
-  G.cam.x = (hatchCol + 1) * CELL_SIZE - W / 2;
-  G.cam.y = 35;
-  const jn = document.getElementById('journal-note');
-  if (jn) jn.style.display = 'block';
+  G.cam.zoom = GAME_DEFAULT_ZOOM;
+  // Centre on the hatch, with the surface line near the top of the screen
+  centerOn((hatchCol + 1) * CELL_SIZE, SURFACE_Y * CELL_SIZE + viewport.h / GAME_DEFAULT_ZOOM * 0.3);
+  showInset('journal-note');
   eventBus.emit('hud_update');
   eventBus.emit('log', 'D1 FOUR STRANGERS REACH THE OLD SHELTER');
   eventBus.emit('sound', { type: 'good' });
@@ -349,8 +352,7 @@ export function applyChapter9() {
   applyChapter8();
   G.activeChapterId = 'ch9';
   G.day = 365 * 30 + 10;
-  const H = window.innerHeight || 700;
-  G.cam.y = 48 * CELL_SIZE - H / 2;
+  centerOn(G.cam.x + viewport.visibleW / (G.cam.zoom || 1) / 2, 48 * CELL_SIZE);
 
   eventBus.emit('modal:decision', {
     title: 'ФИНАЛ: ЧТО ТАИТСЯ ВНИЗУ (ГОД 30)',

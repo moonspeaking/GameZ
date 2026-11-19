@@ -1,4 +1,5 @@
 import { viewport } from '../core/viewport.js';
+import { getZoom } from '../core/camera.js';
 import { G } from '../core/state.js';
 import { CELL_SIZE, SURFACE_Y } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
@@ -24,6 +25,9 @@ export function resizeCanvas() {
   H = window.innerHeight;
   viewport.w = W || 1200;
   viewport.h = H || 700;
+  const sb = document.getElementById('sidebar-hud');
+  const sbW = sb && W > 900 ? sb.offsetWidth : 0;
+  viewport.visibleW = Math.max(300, viewport.w - sbW);
   canvas.width = W;
   canvas.height = H;
   ctx.imageSmoothingEnabled = false;
@@ -58,6 +62,14 @@ export function initRenderer(cvs) {
   });
 }
 
+/** World -> screen transform: scale by zoom, then offset by the (pixel-snapped) camera. */
+function applyCamera() {
+  const z = getZoom();
+  ctx.scale(z, z);
+  ctx.translate(-Math.floor(G.cam.x), -Math.floor(G.cam.y));
+  ctx.imageSmoothingEnabled = false;
+}
+
 function renderPrologue() {
   const t = G.prologue.t;
   const hatchX = G.prologue.hatchX;
@@ -67,7 +79,7 @@ function renderPrologue() {
   if (G.shake > 0) {
     ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
   }
-  ctx.translate(-Math.floor(G.cam.x), -Math.floor(G.cam.y));
+  applyCamera();
 
   drawSurfaceWorld(ctx, G);
   drawTerrain(ctx, G);
@@ -120,7 +132,7 @@ export function render() {
   if (G.shake > 0) {
     ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
   }
-  ctx.translate(-camX, -camY);
+  applyCamera();
 
   // 1. World Rendering Layers
   drawSurfaceWorld(ctx, G);
@@ -152,7 +164,7 @@ export function render() {
   ctx.restore();
 
   // 5. Volumetric 2D Dynamic Lighting Overlay (Screen-space)
-  drawLightingOverlay(ctx, G, camX, camY, W, H);
+  drawLightingOverlay(ctx, G, camX, camY, W, H, getZoom());
 
   // 6. Audio Ambience State Sync
   AmbienceEngine.updateState(G);

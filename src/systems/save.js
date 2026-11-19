@@ -17,7 +17,7 @@ export const SaveSystem = {
         timeMin: Math.floor(G.timeMin),
         speed: G.speed,
         activeChapterId: G.activeChapterId,
-        cam: { x: Math.round(G.cam.x), y: Math.round(G.cam.y) },
+        cam: { x: Math.round(G.cam.x), y: Math.round(G.cam.y), zoom: G.cam.zoom || 1 },
         res: { ...G.res },
         popHistory: [...G.popHistory],
         populationOverride: G.populationOverride,
@@ -90,7 +90,7 @@ export const SaveSystem = {
       G.timeMin = d.timeMin ?? 0;
       G.speed = d.speed ?? 1;
       G.activeChapterId = d.activeChapterId || 'ch1';
-      if (d.cam) { G.cam.x = d.cam.x; G.cam.y = d.cam.y; }
+      if (d.cam) { G.cam.x = d.cam.x; G.cam.y = d.cam.y; G.cam.zoom = d.cam.zoom || 1; }
       if (d.res) G.res = { ...d.res };
       if (d.popHistory) G.popHistory = [...d.popHistory];
       G.populationOverride = d.populationOverride;

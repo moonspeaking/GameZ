@@ -1,3 +1,4 @@
+import { screenToWorld, zoomAt, zoomAtCenter, panByScreen, GAME_DEFAULT_ZOOM } from '../core/camera.js';
 import { G } from '../core/state.js';
 import { CELL_SIZE, SURFACE_Y, MAP_ROWS, MAP_COLS, C_EXCAVATED, C_BEDROCK } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
@@ -20,6 +21,19 @@ export function setSpeed(sp) {
   if (sp === 30) document.getElementById('flt-30x')?.classList.add('active');
 }
 
+export function zoomIn() { zoomAtCenter(1.2); }
+export function zoomOut() { zoomAtCenter(1 / 1.2); }
+export function zoomReset() { zoomAtCenter(GAME_DEFAULT_ZOOM / (G.cam.zoom || 1)); }
+
+export function toggleMainMenu(forceOpen) {
+  const menu = document.getElementById('main-menu');
+  const btn = document.getElementById('btn-main-menu');
+  if (!menu) return;
+  const open = forceOpen === undefined ? menu.style.display === 'none' : !!forceOpen;
+  menu.style.display = open ? 'grid' : 'none';
+  if (btn) btn.classList.toggle('open', open);
+}
+
 export function setToolMode(mode) {
   if (G.toolMode === 'place_room' && mode !== 'place_room') {
     cancelPlacement();
@@ -40,8 +54,7 @@ export function setToolMode(mode) {
 
 export function handleCanvasAction(canvas, clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const worldX = clientX - rect.left + G.cam.x;
-  const worldY = clientY - rect.top + G.cam.y;
+  const { x: worldX, y: worldY } = screenToWorld(clientX - rect.left, clientY - rect.top);
   const cellC = Math.floor(worldX / CELL_SIZE);
   const cellR = Math.floor(worldY / CELL_SIZE);
 
@@ -83,10 +96,12 @@ export function initInput(canvas) {
       if (G.state === 'prologue') finishPrologue();
       else setSpeed(G.speed === 0 ? 1 : 0);
     }
-    if (e.code === 'KeyW' || e.code === 'ArrowUp') G.cam.y -= 30;
-    if (e.code === 'KeyS' || e.code === 'ArrowDown') G.cam.y += 30;
-    if (e.code === 'KeyA' || e.code === 'ArrowLeft') G.cam.x -= 30;
-    if (e.code === 'KeyD' || e.code === 'ArrowRight') G.cam.x += 30;
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') panByScreen(0, -30);
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') panByScreen(0, 30);
+    if (e.code === 'KeyA' || e.code === 'ArrowLeft') panByScreen(-30, 0);
+    if (e.code === 'KeyD' || e.code === 'ArrowRight') panByScreen(30, 0);
+    if (e.code === 'Equal' || e.code === 'NumpadAdd') zoomAtCenter(1.15);
+    if (e.code === 'Minus' || e.code === 'NumpadSubtract') zoomAtCenter(1 / 1.15);
     if (e.code === 'Escape') {
       if (G.toolMode === 'place_room') cancelPlacement();
       else if (G.toolMode !== 'select') setToolMode('select');
@@ -105,14 +120,12 @@ export function initInput(canvas) {
 
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
-    const worldX = e.clientX - rect.left + G.cam.x;
-    const worldY = e.clientY - rect.top + G.cam.y;
+    const { x: worldX, y: worldY } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
     G.hoverCell.c = Math.floor(worldX / CELL_SIZE);
     G.hoverCell.r = Math.floor(worldY / CELL_SIZE);
 
     if (isMouseDown && G.toolMode !== 'dig' && G.toolMode !== 'place_room') {
-      G.cam.x -= (e.clientX - lastMouseX);
-      G.cam.y -= (e.clientY - lastMouseY);
+      panByScreen(-(e.clientX - lastMouseX), -(e.clientY - lastMouseY));
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
     }
@@ -120,7 +133,12 @@ export function initInput(canvas) {
 
   window.addEventListener('mouseup', () => { isMouseDown = false; });
   canvas.addEventListener('wheel', e => {
-    G.cam.y += e.deltaY * 0.4;
+    const rect = canvas.getBoundingClientRect();
+    if (e.shiftKey) {
+      panByScreen(0, e.deltaY * 0.4);   // Shift + wheel: scroll vertically
+    } else {
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    }
     e.preventDefault();
   }, { passive: false });
 
@@ -158,14 +176,12 @@ export function initInput(canvas) {
       const dy = curY - lastMouseY;
 
       const rect = canvas.getBoundingClientRect();
-      const worldX = curX - rect.left + G.cam.x;
-      const worldY = curY - rect.top + G.cam.y;
+      const { x: worldX, y: worldY } = screenToWorld(curX - rect.left, curY - rect.top);
       G.hoverCell.c = Math.floor(worldX / CELL_SIZE);
       G.hoverCell.r = Math.floor(worldY / CELL_SIZE);
 
       if (G.toolMode !== 'dig' && G.toolMode !== 'place_room') {
-        G.cam.x -= dx;
-        G.cam.y -= dy;
+        panByScreen(-dx, -dy);
       }
       lastMouseX = curX;
       lastMouseY = curY;
@@ -173,8 +189,10 @@ export function initInput(canvas) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const curDist = Math.hypot(dx, dy);
-      const delta = curDist - initialPinchDist;
-      G.cam.y -= delta * 0.8;
+      const rect = canvas.getBoundingClientRect();
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+      zoomAt(midX, midY, curDist / initialPinchDist);
       initialPinchDist = curDist;
     }
   }, { passive: false });

@@ -120,3 +120,8 @@
     padding: 6px 12px;
   }
 }
+
+@media (max-width: 900px) {
+  #bottom-toolbar { left: 12px; bottom: 112px; flex-wrap: wrap; max-width: calc(100vw - 24px); }
+  .tb-btn { min-height: 36px; }
+}

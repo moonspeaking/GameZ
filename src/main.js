@@ -3,7 +3,7 @@ import { eventBus } from './core/event_bus.js';
 import { AudioSys, toggleSound } from './audio/audio_sys.js';
 import { initGrid } from './world/grid.js';
 import { initRenderer, resizeCanvas } from './render/renderer.js';
-import { initInput, setSpeed, setToolMode } from './ui/input.js';
+import { initInput, setSpeed, setToolMode, zoomIn, zoomOut, zoomReset, toggleMainMenu } from './ui/input.js';
 import { updateHUD, toggleMobileHUD, showToast, addLog } from './ui/hud.js';
 import {
   openChaptersModal, closeChaptersModal,
@@ -35,6 +35,10 @@ window.AudioSys = AudioSys;
 window.toggleSound = toggleSound;
 window.setSpeed = setSpeed;
 window.setToolMode = setToolMode;
+window.zoomIn = zoomIn;
+window.zoomOut = zoomOut;
+window.zoomReset = zoomReset;
+window.toggleMainMenu = toggleMainMenu;
 window.cancelPlacement = cancelPlacement;
 window.toggleBuildMenu = toggleBuildMenu;
 window.toggleMobileHUD = toggleMobileHUD;

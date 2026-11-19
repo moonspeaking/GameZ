@@ -120,8 +120,9 @@ export function drawMinimap() {
 
   const vp = document.getElementById('sb-minimap-viewport');
   if (vp) {
-    const boxW = (W / (MAP_COLS * CELL_SIZE)) * mw;
-    const boxH = (H / (MAP_ROWS * CELL_SIZE)) * mh;
+    const zoom = G.cam.zoom || 1;
+    const boxW = (W / zoom / (MAP_COLS * CELL_SIZE)) * mw;
+    const boxH = (H / zoom / (MAP_ROWS * CELL_SIZE)) * mh;
     const boxX = (G.cam.x / (MAP_COLS * CELL_SIZE)) * mw;
     const boxY = (G.cam.y / (MAP_ROWS * CELL_SIZE)) * mh;
     vp.style.width = `${Math.min(mw, Math.max(16, boxW))}px`;
@@ -145,6 +146,8 @@ export function updateHUD() {
 
   const pop = G.populationOverride || G.colonists.filter(c => c.status !== 'dead').length;
   setElText('sb-pop-val', pop);
+  document.body.classList.toggle('prologue-active', G.state === 'prologue');
+  setElText('tb-zoom-label', `${Math.round((G.cam.zoom || 1) * 100)}%`);
 
   updateGrowthCurve(year, pop);
 
@@ -212,6 +215,7 @@ export function updateHUD() {
 
 // Event bindings
 eventBus.on('hud_update', updateHUD);
+eventBus.on('zoom_changed', () => setElText('tb-zoom-label', `${Math.round((G.cam.zoom || 1) * 100)}%`));
 eventBus.on('log', addLog);
 eventBus.on('save_status', ({ text }) => {
   const el = document.getElementById('sb-save-time');

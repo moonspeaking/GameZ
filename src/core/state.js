@@ -30,7 +30,7 @@ export function createInitialState() {
     lastCouncilDay: 0,
 
     // Camera & Viewport
-    cam: { x: 0, y: 0, targetX: 0, targetY: 0 },
+    cam: { x: 0, y: 0, targetX: 0, targetY: 0, zoom: 1 },
     shake: 0,
     redAlert: false,
 
