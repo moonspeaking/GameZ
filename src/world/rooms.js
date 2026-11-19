@@ -7,17 +7,17 @@ import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
 
 export const ROOM_CATALOG = [
-  { type: 'quarters', name: 'BUNKS (СПАЛЬНЯ)', icon: '🛏️', w: 6, h: 4, matCost: 15, desc: 'Жилые места (+6 мест к лимиту).' },
-  { type: 'latrine', name: 'LATRINE (САНУЗЕЛ)', icon: '💧', w: 4, h: 3, matCost: 10, desc: 'Санитария, предотвращает болезни.' },
-  { type: 'farm', name: 'MUSHROOM FARM', icon: '🌱', w: 6, h: 4, matCost: 20, desc: 'Выращивание грибов (+3 еды/день).' },
-  { type: 'generator', name: 'BIKE DYNAMO', icon: '🚴', w: 5, h: 4, matCost: 25, desc: 'Велогенератор Рэя (+15 энергии).' },
-  { type: 'waterPump', name: 'WATER PUMP', icon: '🌊', w: 5, h: 4, matCost: 30, desc: 'Откачка воды (+4 воды/день).' },
-  { type: 'infirmary', name: 'CLINIC', icon: '🏥', w: 5, h: 4, matCost: 25, desc: 'Лазарет и карантинный блок.' },
-  { type: 'kitchen', name: 'MESS HALL', icon: '🍽️', w: 6, h: 3, matCost: 20, desc: 'Столовая и доска законов (+мораль).' },
-  { type: 'armory', name: 'ARMORY (ОРУЖЕЙНАЯ)', icon: '🛡️', w: 5, h: 4, matCost: 35, desc: 'Оружейная: +15 к защите и патроны.' },
-  { type: 'school', name: 'BELOW SCHOOL', icon: '📚', w: 6, h: 4, matCost: 30, desc: 'Подземная школа (+10% морали).' },
-  { type: 'hydro_uv', name: 'UV HYDROPONICS', icon: '🥬', w: 7, h: 4, matCost: 45, desc: 'УФ-гидропоника (+6 еды/день).' },
-  { type: 'workshop', name: 'RAY WORKSHOP', icon: '⚙️', w: 5, h: 3, matCost: 25, desc: 'Мастерская (+1 материал/день).' }
+  { type: 'quarters', name: 'СПАЛЬНЯ', icon: '🛏️', w: 6, h: 4, matCost: 15, desc: 'Жилые места (+6 мест к лимиту).' },
+  { type: 'latrine', name: 'САНУЗЕЛ', icon: '💧', w: 4, h: 3, matCost: 10, desc: 'Санитария, предотвращает болезни.' },
+  { type: 'farm', name: 'ГРИБНАЯ ФЕРМА', icon: '🌱', w: 6, h: 4, matCost: 20, desc: 'Выращивание грибов (+3 еды/день).' },
+  { type: 'generator', name: 'ВЕЛОГЕНЕРАТОР', icon: '🚴', w: 5, h: 4, matCost: 25, desc: 'Велогенератор Рэя (+15 энергии).' },
+  { type: 'waterPump', name: 'ВОДЯНОЙ НАСОС', icon: '🌊', w: 5, h: 4, matCost: 30, desc: 'Откачка воды (+4 воды/день).' },
+  { type: 'infirmary', name: 'ЛАЗАРЕТ', icon: '🏥', w: 5, h: 4, matCost: 25, desc: 'Лазарет и карантинный блок.' },
+  { type: 'kitchen', name: 'СТОЛОВАЯ', icon: '🍽️', w: 6, h: 3, matCost: 20, desc: 'Столовая и доска законов (+мораль).' },
+  { type: 'armory', name: 'ОРУЖЕЙНАЯ', icon: '🛡️', w: 5, h: 4, matCost: 35, desc: 'Оружейная: +15 к защите и патроны.' },
+  { type: 'school', name: 'ПОДЗЕМНАЯ ШКОЛА', icon: '📚', w: 6, h: 4, matCost: 30, desc: 'Подземная школа (+10% морали).' },
+  { type: 'hydro_uv', name: 'УФ-ГИДРОПОНИКА', icon: '🥬', w: 7, h: 4, matCost: 45, desc: 'УФ-гидропоника (+6 еды/день).' },
+  { type: 'workshop', name: 'МАСТЕРСКАЯ РЭЯ', icon: '⚙️', w: 5, h: 3, matCost: 25, desc: 'Мастерская (+1 материал/день).' }
 ];
 
 export function countRoomsByType(type) {

@@ -6,6 +6,7 @@ import { updateGameModeUI } from './gamemode_view.js';
 import { getColonistPerk } from '../entities/colonists.js';
 import { AudioSys } from '../audio/audio_sys.js';
 import { AmbienceEngine } from '../audio/ambience.js';
+import { roleLabel } from '../core/i18n.js';
 
 export function openChaptersModal() {
   const grid = document.getElementById('chapters-grid');
@@ -144,7 +145,7 @@ export function showColonistModal(c) {
         <div style="width:40px; height:40px; border-radius:50%; background:#282832; display:flex; align-items:center; justify-content:center; font-size:20px;">${c.icon}</div>
         <div>
           <h2 style="font-size:18px; color:var(--accent-gold); margin:0;">${c.name}</h2>
-          <div style="font-size:11px; color:var(--text-muted);">AGE ${c.age} · ${c.role} ${c.status === 'dead' ? '· (DIED)' : ''}</div>
+          <div style="font-size:11px; color:var(--text-muted);">ВОЗРАСТ ${c.age} · ${roleLabel(c.role)} ${c.status === 'dead' ? '· (ПОГИБ)' : ''}</div>
         </div>
       </div>
       <div style="font-size:12px; line-height:1.6; margin-bottom:16px; background:#121214; padding:12px; border-radius:4px;">

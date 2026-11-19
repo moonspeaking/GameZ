@@ -1,5 +1,6 @@
 import { CELL_SIZE, MAP_COLS, MAP_ROWS, SURFACE_Y, C_EXCAVATED, PEBBLES } from '../core/constants.js';
 import { getStrataPattern, getConcretePattern, getSteelPattern, getHazardPattern } from './procedural_textures.js';
+import { gameNow } from '../core/clock.js';
 
 export function drawTerrain(ctx, G) {
   const strata = [
@@ -21,6 +22,27 @@ export function drawTerrain(ctx, G) {
         ctx.fillRect(c * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
       }
     }
+  }
+
+  // Solid earth beyond the map edges, so the view never shows an empty void next to the town
+  const mapW = MAP_COLS * CELL_SIZE;
+  strata.forEach(tier => {
+    ctx.fillStyle = getStrataPattern(ctx, tier.patternIdx) || tier.tint;
+    const y0 = tier.start * CELL_SIZE, h = (Math.min(tier.end, MAP_ROWS) - tier.start) * CELL_SIZE;
+    ctx.fillRect(-600, y0, 600, h);
+    ctx.fillRect(mapW, y0, 600, h);
+  });
+
+  // Soften the boundary between layers with a short cross-fade, so there is no hard stripe
+  for (let i = 1; i < strata.length; i++) {
+    const by = strata[i].start * CELL_SIZE;
+    const fade = 48, steps = 12;
+    ctx.fillStyle = getStrataPattern(ctx, strata[i].patternIdx) || strata[i].tint;
+    for (let k = 0; k < steps; k++) {
+      ctx.globalAlpha = (k + 1) / (steps + 1);
+      ctx.fillRect(-600, by - fade + (k * fade) / steps, mapW + 1200, fade / steps + 0.5);
+    }
+    ctx.globalAlpha = 1;
   }
 
   // Excavated cavities: dark warm back wall instead of a see-through void
@@ -60,7 +82,7 @@ export function drawTerrain(ctx, G) {
   depthGrad.addColorStop(0, 'rgba(25, 12, 4, 0)');
   depthGrad.addColorStop(1, 'rgba(25, 12, 4, 0.45)');
   ctx.fillStyle = depthGrad;
-  ctx.fillRect(0, SURFACE_Y * CELL_SIZE, MAP_COLS * CELL_SIZE, (MAP_ROWS - SURFACE_Y) * CELL_SIZE);
+  ctx.fillRect(-600, SURFACE_Y * CELL_SIZE, MAP_COLS * CELL_SIZE + 1200, (MAP_ROWS - SURFACE_Y) * CELL_SIZE);
 
   // 1. Hanging Birch/Oak Roots penetrating topsoil (Depth 0m to -12m)
   ctx.strokeStyle = '#2d1c10';
@@ -149,7 +171,7 @@ export function drawTerrain(ctx, G) {
     // Flowing foam and water ripples
     ctx.strokeStyle = 'rgba(74, 155, 198, 0.35)';
     ctx.lineWidth = 1.5;
-    const waveOff = (Date.now() * 0.04) % 50;
+    const waveOff = (gameNow() * 0.04) % 50;
     for (let wx = -50 + waveOff; wx < MAP_COLS * CELL_SIZE; wx += 48) {
       ctx.beginPath();
       ctx.moveTo(wx, riverY + 12);
@@ -159,7 +181,7 @@ export function drawTerrain(ctx, G) {
 
     // Subterranean stalactite drops
     ctx.fillStyle = 'rgba(100, 190, 240, 0.6)';
-    const dripT = (Date.now() * 0.003) % 1;
+    const dripT = (gameNow() * 0.003) % 1;
     ctx.beginPath();
     ctx.arc(140, riverY + dripT * 20, 1.5, 0, Math.PI * 2);
     ctx.arc(380, riverY + ((dripT + 0.4) % 1) * 20, 1.5, 0, Math.PI * 2);

@@ -35,7 +35,7 @@ export function initGrid() {
   G.rooms = [{
     id: 'shelter_main',
     type: 'bunker',
-    name: 'SHELTER 4',
+    name: 'УБЕЖИЩЕ №4',
     x: hatchCol - 5,
     y: shelterY,
     w: 12,

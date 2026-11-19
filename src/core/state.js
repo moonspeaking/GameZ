@@ -58,10 +58,10 @@ export function createInitialState() {
 
     // Colonists
     colonists: [
-      { id: 'ray', name: 'RAY', age: 41, role: 'ELEC', color: '#3498db', icon: '⚡', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Обслуживание генератора', thought: '«Генератор в порядке. Надо экономить топливо.»' },
-      { id: 'nora', name: 'NORA', age: 34, role: 'MED', color: '#e74c3c', icon: '💉', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Осмотр запасов медикаментов', thought: '«Главное — не допустить заражения.»' },
-      { id: 'walt', name: 'WALT', age: 47, role: 'ENG', color: '#f1c40f', icon: '⛏️', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Планирование шахты', thought: '«Порода здесь крепкая. Будем копать.»' },
-      { id: 'eli', name: 'ELI', age: 19, role: 'SCOUT', color: '#2ecc71', icon: '🎒', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Разборка коробок с едой', thought: '«Наверху остался целый город... но там орда.»' }
+      { id: 'ray', name: 'РЭЙ', age: 41, role: 'ELEC', color: '#3498db', icon: '⚡', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Обслуживание генератора', thought: '«Генератор в порядке. Надо экономить топливо.»' },
+      { id: 'nora', name: 'НОРА', age: 34, role: 'MED', color: '#e74c3c', icon: '💉', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Осмотр запасов медикаментов', thought: '«Главное — не допустить заражения.»' },
+      { id: 'walt', name: 'УОЛТ', age: 47, role: 'ENG', color: '#f1c40f', icon: '⛏️', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Планирование шахты', thought: '«Порода здесь крепкая. Будем копать.»' },
+      { id: 'eli', name: 'ЭЛАЙ', age: 19, role: 'SCOUT', color: '#2ecc71', icon: '🎒', hp: 100, x: 0, y: 0, status: 'alive', mood: 'hopeful', task: 'Разборка коробок с едой', thought: '«Наверху остался целый город... но там орда.»' }
     ],
 
     // Memorial — history of fallen & incidents
@@ -83,8 +83,8 @@ export function createInitialState() {
     // World & Architecture
     rooms: [],
     blueprints: [
-      { type: 'quarters', name: 'BUNKS', x: 15, y: SURFACE_Y + 5, w: 5, h: 4, icon: '🛏️' },
-      { type: 'latrine', name: 'LATRINE', x: 11, y: SURFACE_Y + 6, w: 4, h: 3, icon: '💧' }
+      { type: 'quarters', name: 'СПАЛЬНЯ', x: 15, y: SURFACE_Y + 5, w: 5, h: 4, icon: '🛏️' },
+      { type: 'latrine', name: 'САНУЗЕЛ', x: 11, y: SURFACE_Y + 6, w: 4, h: 3, icon: '💧' }
     ],
     grid: [],
     zombies: [],
@@ -95,6 +95,7 @@ export function createInitialState() {
       t: 0,
       soundHorde: false,
       soundSlam: false,
+      soundOpen: false,
       hatchX: hatchCol * CELL_SIZE
     },
 
@@ -143,11 +144,11 @@ export function createInitialState() {
     },
 
     dialogues: [
-      { name: 'RAY', icon: '⚡', text: '"Ray. Electrician. The generator works."' },
-      { name: 'NORA', icon: '💉', text: '"Nora. Combat medic. We need water and strict quarantine."' },
-      { name: 'WALT', icon: '⛏️', text: '"Walt. Miner. Let me grab the pickaxe and start cutting."' },
-      { name: 'ELI', icon: '🎒', text: '"Eli. Courier. I know the city streets if we need supplies."' },
-      { name: 'WALT', icon: '⛏️', text: '"They can smell us. Scratching at the hatch all night."' }
+      { name: 'РЭЙ', icon: '⚡', text: '«Рэй. Электрик. Генератор работает.»' },
+      { name: 'НОРА', icon: '💉', text: '«Нора. Военный медик. Нам нужны вода и строгий карантин.»' },
+      { name: 'УОЛТ', icon: '⛏️', text: '«Уолт. Шахтёр. Дайте кирку — и я начну рубить породу.»' },
+      { name: 'ЭЛАЙ', icon: '🎒', text: '«Элай. Курьер. Я знаю улицы города, если понадобятся припасы.»' },
+      { name: 'УОЛТ', icon: '⛏️', text: '«Они чуют нас. Всю ночь скребутся в люк.»' }
     ]
   };
 }

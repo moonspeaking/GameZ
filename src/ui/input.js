@@ -7,6 +7,18 @@ import { showColonistModal, cancelPlacement } from './modals.js';
 import { finishPrologue } from '../systems/story.js';
 import { spawnDigParticles } from '../render/particles.js';
 import { spawnFloatingText } from '../render/floating_fx.js';
+import { setPaused } from '../core/clock.js';
+
+/** Pause / resume the whole simulation, including the prologue cutscene. */
+export function togglePause() {
+  setPaused(!G.paused);
+  G.paused = !G.paused;
+  const btn = document.getElementById('pause-btn');
+  if (btn) {
+    btn.textContent = G.paused ? '▶ ПРОДОЛЖИТЬ' : '⏸ ПАУЗА';
+    btn.classList.toggle('active', G.paused);
+  }
+}
 
 export function setSpeed(sp) {
   G.speed = sp;
@@ -93,8 +105,7 @@ export function initInput(canvas) {
 
   window.addEventListener('keydown', e => {
     if (e.code === 'Space') {
-      if (G.state === 'prologue') finishPrologue();
-      else setSpeed(G.speed === 0 ? 1 : 0);
+      togglePause();
     }
     if (e.code === 'KeyW' || e.code === 'ArrowUp') panByScreen(0, -30);
     if (e.code === 'KeyS' || e.code === 'ArrowDown') panByScreen(0, 30);

@@ -28,78 +28,65 @@
 <!-- Top Day Pill -->
 <div id="top-day-pill">
   <span class="pill-clock">⏱</span>
-  <span id="pill-title">DAY 1 · THE OUTBREAK</span>
+  <span id="pill-title">ДЕНЬ 1 · НАЧАЛО ЗАРАЖЕНИЯ</span>
 </div>
 
 <!-- Dialogue Card Top-Left -->
 <div id="dialogue-card">
   <div class="dlg-avatar" id="dlg-avatar">⚡</div>
   <div class="dlg-content">
-    <div class="dlg-name" id="dlg-name">RAY</div>
-    <div class="dlg-text" id="dlg-text">"Ray. Electrician. The generator works."</div>
+    <div class="dlg-name" id="dlg-name">РЭЙ</div>
+    <div class="dlg-text" id="dlg-text">«Рэй. Электрик. Генератор работает.»</div>
   </div>
 </div>
 
 <!-- Journal Note Inset -->
 <div id="journal-note" onclick="this.style.display='none'">
   <div class="jn-header">
-    <span id="jn-day">Day 1</span>
-    <span>JOURNAL</span>
+    <span id="jn-day">День 1</span>
+    <span>ДНЕВНИК</span>
   </div>
   <div class="jn-body" id="jn-body">
-    "A concrete room built for twenty. Four of us. We don't know each other's last names."
+    «Бетонная комната, рассчитанная на двадцать человек. Нас четверо. Мы даже не знаем фамилий друг друга.»
   </div>
-  <div class="jn-sig" id="jn-sig">- NORA</div>
+  <div class="jn-sig" id="jn-sig">— НОРА</div>
 </div>
 
 <!-- Whiteboard Inset -->
 <div id="whiteboard-inset" onclick="this.style.display='none'">
-  <h3>RULES</h3>
+  <h3>ПРАВИЛА</h3>
   <ol>
-    <li>48 HOURS OF QUARANTINE FOR NEWCOMERS</li>
-    <li>ONE RATION CARD EACH. NO WORK, NO SECOND BOWL</li>
+    <li>48 ЧАСОВ КАРАНТИНА ДЛЯ НОВЕНЬКИХ</li>
+    <li>ПО ОДНОЙ КАРТОЧКЕ НА ЧЕЛОВЕКА. НЕТ РАБОТЫ — НЕТ ДОБАВКИ</li>
   </ol>
 </div>
 
 <!-- Ration Card Inset -->
 <div id="ration-card-inset" onclick="this.style.display='none'">
-  <div class="rc-title">RATION CARD</div>
-  <div class="rc-row"><span>No. 0144</span><span>WEEK 1</span></div>
-  <div class="rc-row"><span>NAME: TOBY REYES</span></div>
-  <div class="rc-row" style="color:#c0392b; font-weight:bold;">1 MEAL / DAY · WATER 2 L</div>
+  <div class="rc-title">КАРТОЧКА РАЦИОНА</div>
+  <div class="rc-row"><span>№ 0144</span><span>НЕДЕЛЯ 1</span></div>
+  <div class="rc-row"><span>ИМЯ: ТОБИ РЕЙЕС</span></div>
+  <div class="rc-row" style="color:#c0392b; font-weight:bold;">1 ПРИЁМ ПИЩИ В ДЕНЬ · ВОДА 2 Л</div>
   <div class="rc-stamps">
-    <span class="rc-stamp">MON: OK</span>
-    <span class="rc-stamp">TUE: OK</span>
-    <span class="rc-stamp">WED: OK</span>
+    <span class="rc-stamp">ПН: ОК</span>
+    <span class="rc-stamp">ВТ: ОК</span>
+    <span class="rc-stamp">СР: ОК</span>
   </div>
 </div>
 
 <!-- Council Vote Inset -->
 <div id="council-vote-inset" onclick="this.style.display='none'">
-  <div class="cv-header"><span>⚖ COUNCIL</span><span>9 VOTERS</span></div>
-  <div class="cv-prompt">Open the old subway for its steel?</div>
+  <div class="cv-header"><span>⚖ СОВЕТ</span><span>9 ГОЛОСОВ</span></div>
+  <div class="cv-prompt">Вскрыть старое метро ради стали?</div>
   <div class="cv-bar-wrap"><div class="cv-bar-fill"></div></div>
-  <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>YES: 8</span><span>NO: 1</span></div>
+  <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>ЗА: 8</span><span>ПРОТИВ: 1</span></div>
 </div>
 
 <!-- Below Radio Broadcast Inset -->
 <div id="radio-broadcast-inset" onclick="this.style.display='none'">
-  <span class="rb-tag">BELOW RADIO · ON AIR</span>
-  <div class="rb-speaker">MARCUS</div>
-  <div class="rb-text">"The council is suspended. Until this city is safe, the Security Council governs."</div>
-</div>
-
-<!-- Surveillance Camera CRT Inset -->
-<div id="surveillance-cam" onclick="cycleCamera()" title="Кликните для переключения камеры наблюдения">
-  <div class="cam-top-bar">
-    <span class="cam-rec">🔴 REC</span>
-    <span class="cam-timer" id="cam-timer">00:00:04</span>
-  </div>
-  <canvas id="cam-feed-canvas" width="230" height="140"></canvas>
-  <div class="cam-bottom-bar">
-    <span id="cam-name">CAM 1 · HATCH YARD</span>
-    <span id="cam-day">DAY 1</span>
-  </div>
+  <span class="rb-tag">РАДИО «НИЗ» · В ЭФИРЕ</span>
+  <div class="rb-speaker">МАРКУС</div>
+  <div class="rb-text">«Совет приостановлен. Пока город не станет безопасным, правит Совет безопасности.»</div>
 </div>
 
 <!-- Build / dig / demolish tools and zoom, bottom of the map view -->
@@ -113,8 +100,8 @@
   <button class="tb-btn" onclick="zoomReset()" title="Сбросить масштаб" id="tb-zoom-label">80%</button>
 </div>
 
-<!-- Skip Prologue Button -->
-<button id="prologue-skip-btn" onclick="finishPrologue()">СПУСТИТЬСЯ В ШАХТУ ▶ (Пробел)</button>
+<!-- Pause button (also Space), works during the prologue too -->
+<button id="pause-btn" onclick="togglePause()" title="Пауза (Пробел)">⏸ ПАУЗА</button>
 
 <!-- ═══════════════════════════════════════════════════════════════════
      AUTHENTIC RIGHT SIDEBAR HUD
@@ -123,8 +110,8 @@
   <!-- Header: Year & Day + Time Clock -->
   <div class="sb-header">
     <div>
-      <div class="sb-year" id="sb-year-text">YEAR 1</div>
-      <div class="sb-day" id="sb-day-text">DAY 1</div>
+      <div class="sb-year" id="sb-year-text">ГОД 1</div>
+      <div class="sb-day" id="sb-day-text">ДЕНЬ 1</div>
     </div>
     <div class="sb-time-wrap">
       <span class="sb-time-icon" id="sb-time-icon">☀️</span>
@@ -135,14 +122,14 @@
   <!-- Population & SVG Growth Curve Graph -->
   <div class="sb-pop-row">
     <div>
-      <div class="sb-pop-label">POPULATION</div>
+      <div class="sb-pop-label">НАСЕЛЕНИЕ</div>
       <div class="sb-pop-num" id="sb-pop-val">4</div>
     </div>
     <div class="sb-pop-chart">
       <svg viewBox="0 0 130 38">
         <path class="sb-chart-line" id="sb-chart-path" d="M0,34 L20,34 L40,32 L60,32 L80,26 L100,16 L120,12 L130,4"></path>
       </svg>
-      <span class="sb-status-pill" id="sb-status-pill">📍 SURFACE RESTLESS</span>
+      <span class="sb-status-pill" id="sb-status-pill">📍 НА ПОВЕРХНОСТИ НЕСПОКОЙНО</span>
     </div>
   </div>
 
@@ -176,13 +163,13 @@
   <!-- Primary Supplies Section -->
   <div class="sb-section">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">SUPPLIES</span>
+      <span class="sb-sec-title">ЗАПАСЫ</span>
       <span class="sb-sec-badge" id="sb-morale-val">85%</span>
     </div>
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">🍞</span> FOOD (CANS)</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">🍞</span> ЕДА (БАНКИ)</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-food" id="bar-food" style="width:90%;"></div></div>
         <div class="sb-sup-val" id="val-food">90</div>
       </div>
@@ -190,7 +177,7 @@
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">💧</span> WATER (WELL)</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">💧</span> ВОДА (КОЛОДЕЦ)</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-water" id="bar-water" style="width:100%;"></div></div>
         <div class="sb-sup-val" id="val-water">150</div>
       </div>
@@ -198,7 +185,7 @@
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">⚡</span> POWER (GRID)</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">⚡</span> ЭНЕРГИЯ (СЕТЬ)</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-power" id="bar-power" style="width:100%;"></div></div>
         <div class="sb-sup-val" id="val-power">100%</div>
       </div>
@@ -206,7 +193,7 @@
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">⛽</span> FUEL (L)</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">⛽</span> ТОПЛИВО (Л)</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-fuel" id="bar-fuel" style="width:80%;"></div></div>
         <div class="sb-sup-val" id="val-fuel">244</div>
       </div>
@@ -214,7 +201,7 @@
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">💉</span> MEDS</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">💉</span> ЛЕКАРСТВА</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-med" id="bar-med" style="width:50%;"></div></div>
         <div class="sb-sup-val" id="val-med">10</div>
       </div>
@@ -222,7 +209,7 @@
 
     <div class="sb-sup-item">
       <div class="sb-sup-row">
-        <span class="sb-sup-label"><span class="sb-sup-icon">🎯</span> AMMO</span>
+        <span class="sb-sup-label"><span class="sb-sup-icon">🎯</span> ПАТРОНЫ</span>
         <div class="sb-bar-wrap"><div class="sb-bar-fill sb-bar-ammo" id="bar-ammo" style="width:50%;"></div></div>
         <div class="sb-sup-val" id="val-ammo">74</div>
       </div>
@@ -232,35 +219,35 @@
   <!-- Construction -->
   <div class="sb-section">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">CONSTRUCTION</span>
-      <span class="sb-sec-badge" id="sb-const-count">1 PROJECTS</span>
+      <span class="sb-sec-title">СТРОЙКА</span>
+      <span class="sb-sec-badge" id="sb-const-count">1 ПРОЕКТ</span>
     </div>
     <div class="sb-const-status">
       <span style="display:flex; align-items:center; gap:6px;">
         <span id="sb-const-icon">🌱</span>
-        <span class="sb-const-name" id="sb-const-name">MUSHROOMS</span>
+        <span class="sb-const-name" id="sb-const-name">ГРИБЫ</span>
       </span>
-      <span class="sb-const-action" onclick="toggleBuildMenu()">PLAN</span>
+      <span class="sb-const-action" onclick="toggleBuildMenu()">ПЛАН</span>
     </div>
   </div>
 
   <!-- Work Roles -->
   <div class="sb-section">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">WORK</span>
+      <span class="sb-sec-title">РАБОТА</span>
     </div>
     <div class="sb-work-bars" id="sb-work-bars">
       <div class="sb-work-col">
         <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
-        <span>1 DIR</span>
+        <span>1 РУК</span>
       </div>
       <div class="sb-work-col">
         <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
-        <span>1 TECH</span>
+        <span>1 ТЕХ</span>
       </div>
       <div class="sb-work-col">
         <div class="sb-work-meter-wrap"><div class="sb-work-meter-fill" style="height:100%;"></div></div>
-        <span>1 MED</span>
+        <span>1 МЕД</span>
       </div>
     </div>
   </div>
@@ -268,7 +255,7 @@
   <!-- People 2x2 Grid -->
   <div class="sb-section">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">PEOPLE</span>
+      <span class="sb-sec-title">ЛЮДИ</span>
     </div>
     <div class="sb-people-grid" id="sb-people-grid">
       <!-- Generated via JS -->
@@ -278,17 +265,17 @@
   <!-- Log -->
   <div class="sb-section sb-log-sec">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">LOG</span>
+      <span class="sb-sec-title">ЖУРНАЛ</span>
     </div>
     <div class="sb-log-list" id="sb-log-list">
-      <div class="sb-log-entry"><span class="sb-log-day">D1</span> FOUR STRANGERS REACH THE OLD SHELTER</div>
+      <div class="sb-log-entry"><span class="sb-log-day">D1</span> ЧЕТВЕРО НЕЗНАКОМЦЕВ ДОБРАЛИСЬ ДО СТАРОГО УБЕЖИЩА</div>
     </div>
   </div>
 
   <!-- Cross-Section Minimap -->
   <div class="sb-section sb-minimap-sec">
     <div class="sb-sec-header">
-      <span class="sb-sec-title">CROSS-SECTION</span>
+      <span class="sb-sec-title">РАЗРЕЗ</span>
       <span class="sb-sec-badge" id="sb-depth-val">-75 M</span>
     </div>
     <div class="sb-minimap-container" id="sb-minimap-box">
@@ -437,7 +424,7 @@
   <div style="background:#ffffff; color:#1a1917; border:5px solid #a89f91; border-radius:6px; padding:22px; max-width:600px; width:92%; box-shadow:0 10px 40px rgba(0,0,0,0.9); font-family:'Courier New', monospace;">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px dashed #999; padding-bottom:8px; margin-bottom:12px;">
       <div>
-        <h2 style="color:#c0392b; font-size:20px; margin:0; text-decoration:underline;">RULES & DIRECTIVES</h2>
+        <h2 style="color:#c0392b; font-size:20px; margin:0; text-decoration:underline;">ПРАВИЛА И ДИРЕКТИВЫ</h2>
         <span id="wb-mode-status" style="font-size:11px; color:#555; font-weight:bold;">РЕЖИМ: ДЕМОКРАТИЯ (Законы принимаются Советом)</span>
       </div>
       <button onclick="closeWhiteboardModal()" style="background:none; border:none; color:#333; font-size:24px; font-weight:bold; cursor:pointer;">✕</button>

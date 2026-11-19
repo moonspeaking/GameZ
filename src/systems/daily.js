@@ -144,7 +144,7 @@ export function onNewDay() {
 
   // Natural births
   if (pop >= 10 && Math.random() < 0.005 * (pop / 50)) {
-    const babyNames = ['ANNA', 'JAKE', 'MILA', 'OSCAR', 'ZARA', 'LEO', 'IRIS', 'MAX', 'EVA', 'NOAH'];
+    const babyNames = ['АННА', 'ЯКОВ', 'МИЛА', 'ОСКАР', 'ЗАРА', 'ЛЕВ', 'ИРИНА', 'МАКС', 'ЕВА', 'НОЙ'];
     const name = babyNames[Math.floor(Math.random() * babyNames.length)];
     if (!G.colonists.some(c => c.name === name)) {
       G.colonists.push({

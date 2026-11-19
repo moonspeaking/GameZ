@@ -6,7 +6,7 @@ import { showCrisisChoice } from './democracy.js';
 export function triggerNewcomerEvent() {
   const count = 1 + Math.floor(Math.random() * 3);
   const roles = ['WORKER', 'FARMER', 'MEDIC', 'GUARD', 'ENGINEER', 'TEACHER'];
-  const names = ['VERA', 'ADAM', 'LENA', 'BORIS', 'KATE', 'YURI', 'DIMA', 'ANYA', 'SASHA', 'OLGA', 'IVAN', 'TANYA', 'FELIX', 'ROSA', 'VLAD'];
+  const names = ['ВЕРА', 'АДАМ', 'ЛЕНА', 'БОРИС', 'КАТЯ', 'ЮРИЙ', 'ДИМА', 'АНЯ', 'САША', 'ОЛЬГА', 'ИВАН', 'ТАНЯ', 'ФЁДОР', 'РОЗА', 'ВЛАД'];
 
   const availNames = names.filter(n => !G.colonists.some(c => c.name === n));
   if (availNames.length === 0) return;
@@ -332,7 +332,7 @@ export function triggerRandomEvent() {
 export const SCAVENGE_DESTINATIONS = [
   {
     id: 'food_mart',
-    name: '🏪 Супермаркет «FOOD MART»',
+    name: '🏪 Супермаркет «Продукты»',
     desc: 'Запасы консервов, круп и питьевой воды.',
     risk: 'НИЗКИЙ 🟢',
     dangerRate: 0.22,

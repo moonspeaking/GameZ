@@ -141,56 +141,66 @@ export function getStrataPattern(ctx, layerIndex) {
   if (cachedPatterns[key]) return cachedPatterns[key];
   if (!ctx) return null;
 
-  const w = 96;
-  const h = 96;
-  // Warm sepia earth like the reference video: lighter near the surface, cooler and darker with depth.
+  // A big tile (so the repeat is hard to notice) whose features wrap around the edges (so there are no seams).
+  const w = 640;
+  const h = 640;
+  // Each layer has its own hue: warm topsoil, red clay, grey-brown shale, cold slate, dark basalt.
   const baseTones = [
-    { base: '#6e4c2c', noise: 26, dark: '#4a3119', light: '#8d6a43', stone: '#9a8466' }, // Topsoil & root earth
-    { base: '#5e4026', noise: 22, dark: '#3f2815', light: '#7b5836', stone: '#85705a' }, // Compacted silt/clay
-    { base: '#4d3520', noise: 22, dark: '#33210f', light: '#684a2d', stone: '#74624f' }, // Dense shale
-    { base: '#3b2a1b', noise: 18, dark: '#261a0f', light: '#4f3925', stone: '#5d5047' }, // Deep slate & river bedrock
-    { base: '#2a2630', noise: 16, dark: '#1a171e', light: '#38333f', stone: '#4a4553' }  // Basalt deep bedrock
+    { base: '#7a5333', noise: 22, dark: '#4a3119', light: '#9a7248', stone: '#a08a6a' }, // Topsoil & root earth
+    { base: '#6d3f2a', noise: 20, dark: '#43241a', light: '#8a5238', stone: '#90745f' }, // Red clay
+    { base: '#5b4b3b', noise: 20, dark: '#382c20', light: '#75604b', stone: '#8a7b69' }, // Grey-brown shale
+    { base: '#403b44', noise: 16, dark: '#26222a', light: '#57505c', stone: '#6c6573' }, // Cold slate & river bedrock
+    { base: '#2a2630', noise: 14, dark: '#1a171e', light: '#38333f', stone: '#4a4553' }  // Basalt deep bedrock
   ];
+
+  let seed = 1234 + layerIndex * 7919;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
   const tone = baseTones[Math.min(layerIndex, baseTones.length - 1)];
   const base = createNoiseCanvas(w, h, tone.base, tone.noise);
   const bCtx = base.getContext('2d');
+  const wrap = (draw) => { for (const dx of [-w, 0, w]) for (const dy of [-h, 0, h]) draw(dx, dy); };
 
-  // Soft darker / lighter blotches so the soil does not look like flat noise
-  for (let i = 0; i < 9; i++) {
-    const bx = Math.random() * w, by = Math.random() * h, br = 10 + Math.random() * 16;
-    const g = bCtx.createRadialGradient(bx, by, 1, bx, by, br);
-    const col = i % 2 === 0 ? tone.dark : tone.light;
-    g.addColorStop(0, col + '88');
-    g.addColorStop(1, col + '00');
-    bCtx.fillStyle = g;
-    bCtx.fillRect(bx - br, by - br, br * 2, br * 2);
+  // Large soft patches of lighter and darker earth, from broad to small
+  for (let i = 0; i < 70; i++) {
+    const bx = rnd() * w, by = rnd() * h, br = 14 + rnd() * (i < 20 ? 110 : 40);
+    const col = rnd() < 0.5 ? tone.dark : tone.light;
+    wrap((dx, dy) => {
+      const g = bCtx.createRadialGradient(bx + dx, by + dy, 1, bx + dx, by + dy, br);
+      g.addColorStop(0, col + '70');
+      g.addColorStop(1, col + '00');
+      bCtx.fillStyle = g;
+      bCtx.fillRect(bx + dx - br, by + dy - br, br * 2, br * 2);
+    });
   }
 
-  // Stratified horizontal sediment lines (dark crack + pale highlight beneath)
+  // Horizontal sediment seams at uneven heights; both ends meet so the tile stays seamless
   bCtx.lineWidth = 1;
-  [[16, 20, 12], [50, 46, 54], [78, 82, 74]].forEach(([y0, y1, y2]) => {
-    bCtx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
-    bCtx.beginPath(); bCtx.moveTo(0, y0); bCtx.bezierCurveTo(28, y1, 62, y2, w, y0 + 2); bCtx.stroke();
+  for (let i = 0; i < 9; i++) {
+    const y0 = rnd() * h, a1 = (rnd() - 0.5) * 26, a2 = (rnd() - 0.5) * 26;
+    bCtx.strokeStyle = 'rgba(0, 0, 0, 0.26)';
+    bCtx.beginPath(); bCtx.moveTo(0, y0); bCtx.bezierCurveTo(w * 0.3, y0 + a1, w * 0.7, y0 + a2, w, y0); bCtx.stroke();
     bCtx.strokeStyle = 'rgba(255, 220, 160, 0.10)';
-    bCtx.beginPath(); bCtx.moveTo(0, y0 + 1.5); bCtx.bezierCurveTo(28, y1 + 1.5, 62, y2 + 1.5, w, y0 + 3.5); bCtx.stroke();
-  });
+    bCtx.beginPath(); bCtx.moveTo(0, y0 + 1.5); bCtx.bezierCurveTo(w * 0.3, y0 + a1 + 1.5, w * 0.7, y0 + a2 + 1.5, w, y0 + 1.5); bCtx.stroke();
+  }
 
-  // Embedded stones: pale rounded rocks with a shadow side
-  for (let i = 0; i < 7; i++) {
-    const sx = Math.random() * w, sy = Math.random() * h, sr = 2 + Math.random() * 3.5;
-    bCtx.fillStyle = tone.dark;
-    bCtx.beginPath(); bCtx.ellipse(sx + 0.8, sy + 1, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
-    bCtx.fillStyle = tone.stone;
-    bCtx.beginPath(); bCtx.ellipse(sx, sy, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
-    bCtx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-    bCtx.beginPath(); bCtx.ellipse(sx - sr * 0.3, sy - sr * 0.25, sr * 0.4, sr * 0.28, 0, 0, Math.PI * 2); bCtx.fill();
+  // Embedded stones: pale rounded rocks with a shadow side, in varied sizes
+  for (let i = 0; i < 46; i++) {
+    const sx = rnd() * w, sy = rnd() * h, sr = 1.6 + rnd() * rnd() * 6;
+    wrap((dx, dy) => {
+      bCtx.fillStyle = tone.dark;
+      bCtx.beginPath(); bCtx.ellipse(sx + dx + 0.8, sy + dy + 1, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
+      bCtx.fillStyle = tone.stone;
+      bCtx.beginPath(); bCtx.ellipse(sx + dx, sy + dy, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
+      bCtx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+      bCtx.beginPath(); bCtx.ellipse(sx + dx - sr * 0.3, sy + dy - sr * 0.25, sr * 0.4, sr * 0.28, 0, 0, Math.PI * 2); bCtx.fill();
+    });
   }
 
   // Fine dark grit
   bCtx.fillStyle = tone.dark;
-  for (let i = 0; i < 26; i++) {
-    bCtx.fillRect(Math.random() * w, Math.random() * h, 2, 1.5);
+  for (let i = 0; i < 700; i++) {
+    bCtx.fillRect(rnd() * w, rnd() * h, 2, 1.5);
   }
 
   cachedPatterns[key] = ctx.createPattern(base, 'repeat');

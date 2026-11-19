@@ -186,15 +186,15 @@ body {
   border-top: 1px solid #23272e;
 }
 
-/* Skip Prologue Button */
-#prologue-skip-btn {
+/* Pause button */
+#pause-btn {
   position: fixed;
-  bottom: 30px;
-  right: 40px;
-  background: var(--accent-gold);
-  color: #000;
-  border: none;
-  padding: 12px 24px;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(20, 22, 26, 0.9);
+  color: var(--accent-gold);
+  border: 1px solid #3d3e45;
+  padding: 10px 18px;
   border-radius: 4px;
   font-family: inherit;
   font-size: 13px;
@@ -205,8 +205,9 @@ body {
   z-index: 100;
   transition: all 0.2s;
 }
-#prologue-skip-btn:hover {
+#pause-btn:hover, #pause-btn.active {
   background: #f1c40f;
+  color: #000;
   transform: translateY(-2px);
   box-shadow: 0 6px 24px rgba(212, 175, 55, 0.6);
 }

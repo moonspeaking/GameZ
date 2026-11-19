@@ -10,6 +10,7 @@ import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
 import { getTotalAlivePop } from '../entities/colonists.js';
 import { killColonist } from './memorial.js';
+import { roleLabel } from '../core/i18n.js';
 
 // -------------------------------------------------
 // MOOD THRESHOLDS
@@ -179,7 +180,7 @@ export function checkMoraleIncidents() {
       text: `🚪 ДЕЗЕРТИРСТВО: ${deserter.name} бежал на поверхность в отчаянии!`,
       style: 'toast-bad'
     });
-    eventBus.emit('log', `🚪 ИНЦИДЕНТ (День ${G.day}): ${deserter.name} (${deserter.role}) покинул колонию.`);
+    eventBus.emit('log', `🚪 ИНЦИДЕНТ (День ${G.day}): ${deserter.name} (${roleLabel(deserter.role)}) покинул колонию.`);
     eventBus.emit('sound', { type: 'bad' });
     G.shake = 4;
 

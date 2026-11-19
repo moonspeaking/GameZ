@@ -23,3 +23,21 @@ export const PEBBLES = [];
     });
   }
 })();
+
+// Prologue timeline (ms): the four runners reach the hatch one after another, climb down the shaft,
+// then the last one pulls the lid shut just before the horde arrives.
+export const PROLOGUE = {
+  arrive: { ELI: 11000, NORA: 12500, WALT: 14000, RAY: 15500 }, // when each runner reaches the hatch
+  descend: 5000,        // slow climb down the ladder to the bunker floor
+  walkIn: 2000,         // then they walk to their places in the shelter
+  openStart: 10200,     // lid swings open only when the first runner is almost at the hatch
+  openEnd: 10800,
+  closeStart: 20000,    // lid swings shut at the last moment, as the horde reaches the hatch
+  closeEnd: 20900,      // lid slams
+  zoomStart: 8500,      // camera closes in on the hatch to show the descent
+  pan: 24500,           // camera drops into the bunker
+  end: 27500
+};
+
+// In-game minutes per real millisecond at 1x speed (0.01 -> one game day = 2.4 real minutes).
+export const GAME_MINUTES_PER_MS = 0.01;

@@ -34,9 +34,21 @@ export function getTotalAlivePop() {
   return G.populationOverride || G.colonists.filter(c => c.status !== 'dead').length;
 }
 
+/** True while a colonist is in their bunks at night: they lie still. */
+export function isAsleep(c) {
+  const isNight = (G.timeHour >= 21 || G.timeHour < 6);
+  if (!isNight || !G.rooms) return false;
+  return G.rooms.some(r =>
+    (r.type === 'quarters' || r.type === 'bunker') &&
+    c.x >= r.x * CELL_SIZE && c.x <= (r.x + r.w) * CELL_SIZE &&
+    c.y >= r.y * CELL_SIZE && c.y <= (r.y + r.h) * CELL_SIZE + 4
+  );
+}
+
 export function updateColonists(simDt) {
   G.colonists.forEach(c => {
     if (c.status === 'dead') return;
+    if (isAsleep(c)) return;
     if (G.mechanics.scavengeTeam && G.mechanics.scavengeTeam.includes(c.id)) return;
     if (!c._wanderTimer) c._wanderTimer = 0;
     c._wanderTimer += simDt;

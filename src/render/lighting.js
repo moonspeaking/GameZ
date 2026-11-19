@@ -5,6 +5,7 @@
  */
 import { CELL_SIZE, SURFACE_Y, MAP_COLS, MAP_ROWS } from '../core/constants.js';
 import { getCorridors } from '../world/rooms.js';
+import { gameNow } from '../core/clock.js';
 
 let lightCanvas = null;
 let lightCtx = null;
@@ -49,9 +50,9 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
   const gTop = (SURFACE_Y * CELL_SIZE - camY) * zoom;
   const gBottom = (MAP_ROWS * CELL_SIZE - camY) * zoom;
   const gloom = lCtx.createLinearGradient(0, gTop, 0, Math.max(gTop + 1, gBottom));
-  gloom.addColorStop(0, 'rgba(22, 12, 6, 0.30)');
-  gloom.addColorStop(0.5, 'rgba(18, 10, 6, 0.50)');
-  gloom.addColorStop(1, 'rgba(10, 8, 12, 0.72)');
+  gloom.addColorStop(0, 'rgba(22, 12, 6, 0.05)');
+  gloom.addColorStop(0.5, 'rgba(18, 10, 6, 0.14)');
+  gloom.addColorStop(1, 'rgba(10, 8, 12, 0.34)');
   lCtx.fillStyle = gloom;
   lCtx.fillRect(0, 0, viewW, viewH);
 
@@ -199,7 +200,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
   // Red Alert or Blackout tint (full-screen, so draw in screen space)
   lCtx.setTransform(1, 0, 0, 1, 0, 0);
   if (isRedAlert) {
-    const pulse = (Math.sin(Date.now() * 0.008) + 1) * 0.5;
+    const pulse = (Math.sin(gameNow() * 0.008) + 1) * 0.5;
     lCtx.fillStyle = `rgba(220, 20, 20, ${0.15 + pulse * 0.22})`;
     lCtx.fillRect(0, 0, viewW, viewH);
   } else if (isBlackout) {

@@ -7,6 +7,7 @@
  */
 import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
+import { roleLabel } from '../core/i18n.js';
 
 // -------------------------------------------------
 // EPITAPH GENERATORS
@@ -102,7 +103,7 @@ export function killColonist(colonistId, cause, day) {
 
   G.memorial.fallen.push(record);
 
-  eventBus.emit('log', `⚰ МЕМОРИАЛ: ${c.name} (${c.role}) — ${cause}`);
+  eventBus.emit('log', `⚰ МЕМОРИАЛ: ${c.name} (${roleLabel(c.role)}) — ${cause}`);
   eventBus.emit('sound', { type: 'bad' });
   eventBus.emit('hud_update');
 

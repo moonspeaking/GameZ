@@ -1,5 +1,6 @@
 import { CELL_SIZE } from '../core/constants.js';
 import { getConcretePattern, getSteelPattern, getHazardPattern } from './procedural_textures.js';
+import { gameNow } from '../core/clock.js';
 
 // --- Room Shell & Ambient Occlusion ---
 
@@ -67,37 +68,37 @@ function renderRoomShell(ctx, r, rx, ry, rw, rh, G) {
 
   // 7. Unpowered Blinking Warning Badge if energy <= 0
   if (isBlackout) {
-    const pulse = (Math.sin(Date.now() * 0.008) + 1) * 0.5;
+    const pulse = (Math.sin(gameNow() * 0.008) + 1) * 0.5;
     ctx.fillStyle = `rgba(200, 30, 30, ${0.4 + pulse * 0.5})`;
     ctx.fillRect(rx + rw - 55, ry + 12, 50, 11);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 7px sans-serif';
-    ctx.fillText('⚡ OFF', rx + rw - 44, ry + 20);
+    ctx.fillText('⚡ ВЫКЛ', rx + rw - 44, ry + 20);
   }
 }
 
 // --- Specific Room Interiors (All 11 Types) ---
 
-function renderBunkerProps(ctx, r, rx, ry, rw, rh) {
-  // Heavy Steel Tubular Bunk Beds (Double Bunk) on Left
-  const bedX = rx + 8;
-  const bedY = ry + rh - 46;
+function drawDoubleBunk(ctx, bedX, bedY) {
+  // Heavy steel tubular double bunk: two beds, upper and lower
   ctx.fillStyle = '#2b3038';
   ctx.fillRect(bedX, bedY, 4, 46);
   ctx.fillRect(bedX + 44, bedY, 4, 46);
   ctx.fillRect(bedX, bedY + 16, 48, 3);
   ctx.fillRect(bedX, bedY + 38, 48, 3);
-
-  // Mattresses and Wool Blankets (Military Olive top, Dark Navy bottom) with realistic fabric folds
   ctx.fillStyle = '#3a4433'; // olive wool blanket top
   ctx.fillRect(bedX + 4, bedY + 12, 38, 4);
   ctx.fillStyle = '#263342'; // navy wool blanket bottom
   ctx.fillRect(bedX + 4, bedY + 34, 38, 4);
-
-  // Pillows
-  ctx.fillStyle = '#c5ccd3';
+  ctx.fillStyle = '#c5ccd3'; // pillows
   ctx.fillRect(bedX + 5, bedY + 9, 9, 4);
   ctx.fillRect(bedX + 5, bedY + 31, 9, 4);
+}
+
+function renderBunkerProps(ctx, r, rx, ry, rw, rh) {
+  // Two double bunks = four beds, one for each of the four survivors
+  drawDoubleBunk(ctx, rx + 8, ry + rh - 46);
+  drawDoubleBunk(ctx, rx + 64, ry + rh - 46);
 
   // Steel Locker on Right
   const lkX = rx + rw - 32;
@@ -170,7 +171,7 @@ function renderFarmProps(ctx, r, rx, ry, rw, rh) {
     ctx.arc(mx + 3, ry + rh - 23, 4.5, Math.PI, 0);
     ctx.fill();
     // Spore pulse
-    const spPulse = (Math.sin(Date.now() * 0.004 + mx) + 1) * 0.5;
+    const spPulse = (Math.sin(gameNow() * 0.004 + mx) + 1) * 0.5;
     ctx.fillStyle = col.replace(')', ', 0.25)').replace('rgb', 'rgba').replace('#', 'rgba(');
     ctx.fillStyle = 'rgba(93, 173, 226, 0.2)';
     ctx.beginPath();
@@ -189,7 +190,7 @@ function renderHydroUvProps(ctx, r, rx, ry, rw, rh) {
   ctx.fillRect(rackX, rackY, rackW, 46);
 
   // Two tiers of UV LED grow light bars
-  const uvPulse = 0.35 + Math.sin(Date.now() * 0.003) * 0.08;
+  const uvPulse = 0.35 + Math.sin(gameNow() * 0.003) * 0.08;
   ctx.fillStyle = `rgba(185, 80, 240, ${uvPulse})`;
   ctx.fillRect(rackX + 4, rackY + 6, rackW - 8, 38);
 
@@ -229,7 +230,7 @@ function renderWaterPumpProps(ctx, r, rx, ry, rw, rh) {
   ctx.beginPath(); ctx.arc(twX, twY, 20, 0, Math.PI * 2); ctx.stroke();
 
   // Rotating brass impeller blades
-  const angle = Date.now() * 0.007;
+  const angle = gameNow() * 0.007;
   ctx.strokeStyle = '#c59b27';
   ctx.lineWidth = 2.5;
   for (let i = 0; i < 6; i++) {
@@ -273,7 +274,7 @@ function renderGeneratorProps(ctx, r, rx, ry, rw, rh) {
   ctx.strokeRect(gx, gy, gw, 35);
 
   // Rotating belt pulley
-  const spin = Date.now() * 0.015;
+  const spin = gameNow() * 0.015;
   ctx.fillStyle = '#2f3542';
   ctx.beginPath(); ctx.arc(gx + 12, gy + 16, 9, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#f1c40f'; // rotating marker
@@ -436,8 +437,8 @@ function renderSchoolProps(ctx, r, rx, ry, rw, rh) {
 
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
   ctx.font = '6px monospace';
-  ctx.fillText('COLONY EARTH', bbX + 4, bbY + 8);
-  ctx.fillText('SURVIVAL CH.1', bbX + 4, bbY + 16);
+  ctx.fillText('КОЛОНИЯ ЗЕМЛЯ', bbX + 4, bbY + 8);
+  ctx.fillText('ВЫЖИВАНИЕ, ГЛ.1', bbX + 4, bbY + 16);
 
   // Student Desks
   ctx.fillStyle = '#4e342e';

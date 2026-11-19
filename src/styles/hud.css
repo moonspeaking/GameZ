@@ -335,6 +335,5 @@
 .tb-sep { width: 1px; align-self: stretch; background: #33353c; margin: 0 4px; }
 #tb-zoom-label { min-width: 46px; font-family: monospace; }
 body.prologue-active #bottom-toolbar { display: none; }
-body:not(.prologue-active) #prologue-skip-btn { display: none; }
 .sb-speed-btn { padding: 3px 5px; }
 .sb-mode-btn { font-size: 9px; }

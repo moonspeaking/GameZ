@@ -1,337 +1,278 @@
-import { CELL_SIZE, MAP_COLS, SURFACE_Y } from '../core/constants.js';
+import { CELL_SIZE, MAP_COLS, SURFACE_Y, PROLOGUE } from '../core/constants.js';
 import { getStrataPattern } from './procedural_textures.js';
+import { gameNow } from '../core/clock.js';
 
-export function drawRunningSurvivor(ctx, x, y, color, name, isRunning) {
-  if (!isRunning) return;
-  const legOffset = Math.sin(Date.now() * 0.02) * 5;
+export { drawRunningSurvivor, drawSpeechBubble, drawZombiePile, drawWanderingZombies } from './surface_actors.js';
 
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x - 2, y - 8); ctx.lineTo(x - 4 + legOffset, y);
-  ctx.moveTo(x + 2, y - 8); ctx.lineTo(x + 4 - legOffset, y);
-  ctx.stroke();
-
-  ctx.fillStyle = color;
-  ctx.fillRect(x - 4, y - 20, 8, 12);
-
-  ctx.fillStyle = '#ffdbac';
-  ctx.beginPath(); ctx.arc(x, y - 24, 4.5, 0, Math.PI * 2); ctx.fill();
-
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 8px sans-serif';
-  ctx.fillText(name, x - 10, y - 30);
-}
-
-export function drawSpeechBubble(ctx, x, y, text) {
-  ctx.font = 'bold 11px sans-serif';
-  const tw = ctx.measureText(text).width;
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1.5;
-
-  ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(x - tw / 2 - 8, y - 16, tw + 16, 20, 4);
-  } else {
-    ctx.rect(x - tw / 2 - 8, y - 16, tw + 16, 20);
-  }
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(x - 4, y + 4); ctx.lineTo(x, y + 10); ctx.lineTo(x + 4, y + 4);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#000000';
-  ctx.fillText(text, x - tw / 2, y - 2);
-}
-
-export function drawZombiePile(ctx, leadX, skyH, isPiledOnHatch) {
-  const count = isPiledOnHatch ? 36 : 26;
-  const t = Date.now() * 0.005;
-
-  for (let i = 0; i < count; i++) {
-    let zx, zy;
-    if (isPiledOnHatch) {
-      const layer = Math.floor(i / 6);
-      const inLayer = i % 6;
-      zx = leadX + 8 + (inLayer - 2.5) * 11 + Math.sin(t + i) * 2;
-      zy = skyH - 6 - layer * 9;
-    } else {
-      zx = leadX - (i * 9) + Math.sin(t + i * 2) * 4;
-      zy = skyH - 2 - (i % 3) * 3;
-    }
-
-    // Shadow under zombie
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.beginPath();
-    ctx.ellipse(zx, zy, 6, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Ragged infected clothing
-    const clothColors = ['#2c322b', '#383028', '#242a30', '#1f241e'];
-    ctx.fillStyle = clothColors[i % clothColors.length];
-    ctx.fillRect(zx - 4.5, zy - 18, 9, 13);
-
-    // Gaunt decaying neck & head
-    ctx.fillStyle = (i % 2 === 0) ? '#4a5745' : '#3d4839';
-    ctx.beginPath(); ctx.arc(zx, zy - 22, 4.5, 0, Math.PI * 2); ctx.fill();
-
-    // Glowing infected eyes (piercing red/amber in dark)
-    ctx.fillStyle = (i % 3 === 0) ? '#e74c3c' : '#f39c12';
-    ctx.fillRect(zx + 1, zy - 23, 1.5, 1.5);
-    ctx.fillRect(zx + 3.5, zy - 23, 1.5, 1.5);
-
-    // Clawing claw-arms reaching towards the hatch
-    ctx.strokeStyle = '#2f382b';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    const armReach = isPiledOnHatch ? Math.sin(t * 2 + i) * 10 : 12;
-    ctx.moveTo(zx - 2, zy - 14);
-    ctx.lineTo(zx + armReach, zy - 16 + Math.cos(t * 3 + i) * 4);
-    ctx.stroke();
-
-    // Bony claw tip
-    ctx.fillStyle = '#222';
-    ctx.fillRect(zx + armReach - 1, zy - 17 + Math.cos(t * 3 + i) * 4, 2, 2);
-  }
-
-  // Blood smears around the hatch rim when piled
-  if (isPiledOnHatch) {
-    ctx.fillStyle = 'rgba(120, 20, 20, 0.75)';
-    ctx.fillRect(leadX - 8, skyH - 8, 32, 3);
-    ctx.beginPath();
-    ctx.arc(leadX + 6, skyH - 5, 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
+const OUT = '#1d1612';
 
 export function drawSurfaceWorld(ctx, G) {
   const skyH = SURFACE_Y * CELL_SIZE;
   const hatchCol = Math.floor(MAP_COLS / 2);
   const hatchX = hatchCol * CELL_SIZE;
+  const totalW = MAP_COLS * CELL_SIZE;
+  const isNight = G.timeHour >= 21 || G.timeHour < 5;
+  const lit = isNight; // windows glow at night
+  const snowRoofs = [];
+  const R = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+  // Outlined flat-colour block, the building block of the original's look
+  const box = (fill, x, y, w, h) => { R(OUT, x - 1, y - 1, w + 2, h + 2); R(fill, x, y, w, h); };
+  const win = (x, y, w, h) => { R('#1b1714', x - 1, y - 1, w + 2, h + 2); R(lit ? '#f0c56a' : '#34383f', x, y, w, h); if (!lit) R('rgba(255,255,255,0.10)', x, y, w, 2); };
 
-  // 1. Sky Gradient
+  // 1. Sky: hazy dusk, mauve above and peach at the horizon
   const skyGrad = ctx.createLinearGradient(0, -300, 0, skyH);
   if (G.isWinterSnow) {
     skyGrad.addColorStop(0, '#54585c');
     skyGrad.addColorStop(1, '#85878a');
-  } else if (G.timeHour >= 21 || G.timeHour < 5) {
+  } else if (isNight) {
     skyGrad.addColorStop(0, '#0a0d14');
     skyGrad.addColorStop(1, '#1b2230');
   } else {
-    skyGrad.addColorStop(0, '#615f66');
-    skyGrad.addColorStop(0.6, '#827f87');
-    skyGrad.addColorStop(1, '#a8a29e');
+    skyGrad.addColorStop(0, '#6f6470');
+    skyGrad.addColorStop(0.45, '#9a7f7c');
+    skyGrad.addColorStop(0.8, '#c4977e');
+    skyGrad.addColorStop(1, '#d6a888');
   }
   ctx.fillStyle = skyGrad;
-  ctx.fillRect(-600, -400, MAP_COLS * CELL_SIZE + 1200, skyH + 400);
+  ctx.fillRect(-600, -400, totalW + 1200, skyH + 400);
 
-  // Background city silhouettes
-  ctx.fillStyle = G.isWinterSnow ? 'rgba(70, 75, 82, 0.5)' : 'rgba(40, 42, 48, 0.45)';
-  for (let bx = -400; bx < MAP_COLS * CELL_SIZE + 400; bx += 85) {
-    const bh = 110 + Math.sin(bx * 0.05) * 45;
-    ctx.fillRect(bx, skyH - bh, 70, bh);
+  // Sun by day, moon by night (hazy, behind the skyline)
+  {
+    const bodyX = hatchX - 330, bodyY = skyH - 215;
+    const glow = ctx.createRadialGradient(bodyX, bodyY, 4, bodyX, bodyY, 90);
+    glow.addColorStop(0, isNight ? 'rgba(200, 215, 240, 0.35)' : 'rgba(255, 224, 170, 0.5)');
+    glow.addColorStop(1, 'rgba(255, 224, 170, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(bodyX - 90, bodyY - 90, 180, 180);
+    ctx.fillStyle = isNight ? '#dfe6f3' : '#f6dcae';
+    ctx.beginPath(); ctx.arc(bodyX, bodyY, isNight ? 11 : 14, 0, Math.PI * 2); ctx.fill();
   }
 
-  // Distant filler buildings so the wider map still reads as a town (the detailed block sits around the hatch)
+  // 2. Two layers of hazy skyline behind the street (blue-grey, as in the original)
   {
-    const palette = ['#7c6a5a', '#6a6f78', '#8a7260', '#5f6670', '#85796a'];
-    const edgeL = hatchX - 520, edgeR = hatchX + 700;
-    for (let i = 0, bx = -560; bx < MAP_COLS * CELL_SIZE + 560; i++, bx += 70 + (i * 37) % 50) {
-      if (bx > edgeL && bx < edgeR) continue;
-      const bw = 60 + (i * 53) % 40;
-      const bh = 70 + (i * 29) % 90;
-      ctx.fillStyle = palette[i % palette.length];
-      ctx.fillRect(bx, skyH - bh, bw, bh);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-      ctx.fillRect(bx + bw - 10, skyH - bh, 10, bh);
-      ctx.fillStyle = '#25272c';
-      for (let wy = skyH - bh + 10; wy < skyH - 18; wy += 24) {
-        for (let wx = bx + 8; wx < bx + bw - 18; wx += 20) ctx.fillRect(wx, wy, 9, 13);
+    const far = G.isWinterSnow ? '#7c8188' : isNight ? '#161c28' : '#8a8095';
+    const near = G.isWinterSnow ? '#6c7178' : isNight ? '#11161f' : '#756e86';
+    for (let i = 0, bx = -620; bx < totalW + 620; i++, bx += 48 + (i * 29) % 36) {
+      const bw = 44 + (i * 41) % 38, bh = 90 + (i * 53) % 110;
+      R(far, bx, skyH - bh, bw, bh);
+      R('rgba(255,255,255,0.06)', bx, skyH - bh, 4, bh);
+    }
+    for (let i = 0, bx = -600; bx < totalW + 600; i++, bx += 64 + (i * 37) % 46) {
+      const bw = 52 + (i * 47) % 40, bh = 55 + (i * 31) % 80;
+      R(near, bx, skyH - bh, bw, bh);
+      R('rgba(0,0,0,0.18)', bx + bw - 8, skyH - bh, 8, bh);
+      if (i % 3 === 0) R('rgba(0,0,0,0.25)', bx + 6, skyH - bh - 6, 6, 6); // rooftop unit
+      ctx.fillStyle = lit ? 'rgba(240,197,106,0.35)' : 'rgba(30,28,40,0.30)';
+      for (let wy = skyH - bh + 10; wy < skyH - 18; wy += 18) {
+        for (let wx = bx + 7; wx < bx + bw - 12; wx += 14) ctx.fillRect(wx, wy, 6, 8);
       }
     }
   }
 
-  // Sun by day, moon by night (behind the buildings)
+  // Smoke plume from the factory chimney, drifting right
   {
-    const isNight = G.timeHour >= 21 || G.timeHour < 5;
-    const bodyX = hatchX - 330, bodyY = skyH - 195;
-    const glow = ctx.createRadialGradient(bodyX, bodyY, 4, bodyX, bodyY, 70);
-    glow.addColorStop(0, isNight ? 'rgba(200, 215, 240, 0.35)' : 'rgba(255, 238, 180, 0.55)');
-    glow.addColorStop(1, 'rgba(255, 238, 180, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(bodyX - 70, bodyY - 70, 140, 140);
-    ctx.fillStyle = isNight ? '#dfe6f3' : '#fff3c4';
-    ctx.beginPath(); ctx.arc(bodyX, bodyY, isNight ? 11 : 14, 0, Math.PI * 2); ctx.fill();
+    const cx = hatchX - 640, time = gameNow() * 0.0006;
+    for (let i = 0; i < 14; i++) {
+      const a = Math.max(0.04, 0.26 - i * 0.017);
+      ctx.fillStyle = isNight ? `rgba(20,24,32,${a})` : `rgba(78,66,70,${a})`;
+      ctx.beginPath();
+      ctx.arc(cx + i * 11 + Math.sin(time + i) * 5, skyH - 190 - i * 20, 9 + i * 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  // 2. High Voltage Electrical Transmission Pylon Tower
-  const pylonX = hatchX - 520;
-  ctx.strokeStyle = '#2b2e34';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(pylonX, skyH); ctx.lineTo(pylonX + 35, skyH - 240);
-  ctx.moveTo(pylonX + 90, skyH); ctx.lineTo(pylonX + 55, skyH - 240);
-  ctx.moveTo(pylonX + 20, skyH - 180); ctx.lineTo(pylonX + 70, skyH - 180);
-  ctx.moveTo(pylonX + 10, skyH - 120); ctx.lineTo(pylonX + 80, skyH - 120);
-  ctx.moveTo(pylonX - 5, skyH - 60); ctx.lineTo(pylonX + 95, skyH - 60);
-  for (let py = skyH; py > skyH - 240; py -= 40) {
-    ctx.moveTo(pylonX + 10, py); ctx.lineTo(pylonX + 80, py - 40);
-    ctx.moveTo(pylonX + 80, py); ctx.lineTo(pylonX + 10, py - 40);
+  // 3. Brick chimney + small house with a pitched roof (far left of the street)
+  {
+    const chX = hatchX - 650;
+    box('#8e3d2c', chX, skyH - 190, 14, 190);
+    R('#5a241a', chX - 2, skyH - 192, 18, 5);
+    box('#8d6b55', chX + 26, skyH - 64, 62, 64);
+    ctx.fillStyle = OUT;
+    ctx.beginPath(); ctx.moveTo(chX + 21, skyH - 64); ctx.lineTo(chX + 57, skyH - 96); ctx.lineTo(chX + 93, skyH - 64); ctx.fill();
+    ctx.fillStyle = '#6a3a34';
+    ctx.beginPath(); ctx.moveTo(chX + 25, skyH - 65); ctx.lineTo(chX + 57, skyH - 93); ctx.lineTo(chX + 89, skyH - 65); ctx.fill();
+    win(chX + 38, skyH - 48, 14, 16); win(chX + 62, skyH - 48, 14, 16);
+    R('#2b1f19', chX + 50, skyH - 26, 12, 26);
   }
+
+  // 4. High-voltage pylon with a lattice, leaning over the street
+  const pylonX = hatchX - 770;
+  ctx.strokeStyle = isNight ? '#0f1217' : '#3a3338';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pylonX, skyH); ctx.lineTo(pylonX + 36, skyH - 290);
+  ctx.moveTo(pylonX + 96, skyH); ctx.lineTo(pylonX + 60, skyH - 290);
+  ctx.stroke();
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (let k = 0; k < 7; k++) {
+    const f0 = k / 7, f1 = (k + 1) / 7;
+    const lx0 = pylonX + 36 * f0, rx0 = pylonX + 96 - 36 * f0;
+    const lx1 = pylonX + 36 * f1, rx1 = pylonX + 96 - 36 * f1;
+    const y0 = skyH - 290 * f0, y1 = skyH - 290 * f1;
+    ctx.moveTo(lx0, y0); ctx.lineTo(rx1, y1);
+    ctx.moveTo(rx0, y0); ctx.lineTo(lx1, y1);
+    ctx.moveTo(lx1, y1); ctx.lineTo(rx1, y1);
+  }
+  ctx.moveTo(pylonX + 6, skyH - 250); ctx.lineTo(pylonX - 34, skyH - 250);
+  ctx.moveTo(pylonX + 90, skyH - 250); ctx.lineTo(pylonX + 130, skyH - 250);
   ctx.stroke();
 
-  // 3. Wooden Utility Telephone Poles & Sagging Wires
-  const poleXs = [hatchX - 380, hatchX - 210, hatchX - 40, hatchX + 160, hatchX + 340];
-  ctx.strokeStyle = '#382f25';
-  ctx.lineWidth = 4;
+  // 5. Utility poles and sagging wires across the whole street
+  const poleXs = [hatchX - 600, hatchX - 438, hatchX - 322, hatchX - 205, hatchX - 90, hatchX + 160, hatchX + 340];
   poleXs.forEach(px => {
-    ctx.beginPath();
-    ctx.moveTo(px, skyH); ctx.lineTo(px, skyH - 110);
-    ctx.moveTo(px - 14, skyH - 100); ctx.lineTo(px + 14, skyH - 100);
-    ctx.stroke();
+    R('#2f261e', px - 2, skyH - 128, 5, 128);
+    R('#2f261e', px - 16, skyH - 120, 33, 4);
+    R('#3d3228', px - 13, skyH - 108, 27, 3);
   });
-
-  ctx.strokeStyle = '#1a191a';
+  ctx.strokeStyle = '#1a1517';
   ctx.lineWidth = 1.2;
   for (let i = 0; i < poleXs.length - 1; i++) {
     const x1 = poleXs[i], x2 = poleXs[i + 1];
+    for (const dy of [-120, -108]) {
+      ctx.beginPath();
+      ctx.moveTo(x1 + 12, skyH + dy);
+      ctx.quadraticCurveTo((x1 + x2) / 2, skyH + dy + 16, x2 - 12, skyH + dy);
+      ctx.stroke();
+    }
+  }
+  // Wires leading off toward the pylon
+  ctx.beginPath();
+  ctx.moveTo(pylonX + 130, skyH - 250);
+  ctx.quadraticCurveTo(hatchX - 700, skyH - 215, poleXs[0], skyH - 120);
+  ctx.stroke();
+
+  // Birds in the haze
+  if (!isNight) {
+    ctx.strokeStyle = '#3a3036';
+    ctx.lineWidth = 1.5;
+    const bt = gameNow() * 0.02;
+    for (let i = 0; i < 4; i++) {
+      const bx = hatchX - 520 + i * 160 + (bt * 0.1 + i * 60) % 90, by = skyH - 235 - (i % 2) * 28 + Math.sin(bt * 0.05 + i) * 4;
+      const flap = Math.sin(bt * 0.4 + i) * 2;
+      ctx.beginPath(); ctx.moveTo(bx - 4, by + flap); ctx.lineTo(bx, by); ctx.lineTo(bx + 4, by + flap); ctx.stroke();
+    }
+  }
+
+  // 6. Gas station: white canopy with a red stripe, tall GAS price sign, delivery van
+  const gasX = hatchX - 560;
+  {
+    R('#4d4a4a', gasX - 22, skyH - 118, 4, 118);           // sign pole
+    box('#f2eee4', gasX - 38, skyH - 138, 34, 28);
+    R('#c4392b', gasX - 38, skyH - 138, 34, 6);
+    ctx.fillStyle = '#1d1612'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('АЗС', gasX - 31, skyH - 119);
+    ctx.font = 'bold 7px monospace'; ctx.fillStyle = '#b32d20'; ctx.fillText('59,9', gasX - 33, skyH - 111);
+    box('#f2eee4', gasX, skyH - 66, 120, 8);                // canopy slab
+    R('#c4392b', gasX, skyH - 62, 120, 4);
+    R('#8d8a82', gasX + 12, skyH - 58, 6, 58);
+    R('#8d8a82', gasX + 100, skyH - 58, 6, 58);
+    snowRoofs.push([gasX, skyH - 67, 120]);
+    // Delivery van
+    box('#3d6a96', gasX + 26, skyH - 38, 56, 28);
+    box('#4a7aa6', gasX + 68, skyH - 30, 22, 20);
+    R('#9ec3dc', gasX + 74, skyH - 27, 11, 9);
+    R('#1d1612', gasX + 36, skyH - 9, 10, 10); R('#1d1612', gasX + 72, skyH - 9, 10, 10);
+    R('#6b6e72', gasX + 39, skyH - 6, 4, 4); R('#6b6e72', gasX + 75, skyH - 6, 4, 4);
+  }
+
+  // 7. Small white gatehouse "4 INSIDE" with a red roof
+  const shackX = hatchX - 430;
+  {
+    box('#f2eee4', shackX, skyH - 56, 62, 56);
+    R('#c4392b', shackX - 4, skyH - 62, 70, 8);
+    R('#8d241a', shackX - 4, skyH - 55, 70, 2);
+    win(shackX + 8, skyH - 44, 20, 20);
+    R('#2b1f19', shackX + 38, skyH - 40, 16, 40);
+    ctx.fillStyle = '#c4392b'; ctx.font = 'bold 8px monospace'; ctx.fillText('4 ВНУТРИ', shackX + 6, skyH - 12);
+    snowRoofs.push([shackX - 4, skyH - 63, 70]);
+  }
+
+  // 8. Pharmacy: green walls, white sign, green cross, awning; burning sedan in front
+  const pharmX = hatchX - 335;
+  {
+    box('#8eaa8b', pharmX, skyH - 98, 118, 98);
+    R('#5d7d5b', pharmX, skyH - 98, 118, 7);
+    box('#f4f1e8', pharmX + 12, skyH - 88, 70, 18);
+    ctx.fillStyle = '#4e6d4d'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('АПТЕКА', pharmX + 17, skyH - 75);
+    R('#35a35e', pharmX + 92, skyH - 86, 14, 5); R('#35a35e', pharmX + 96.5, skyH - 90.5, 5, 14);
+    win(pharmX + 8, skyH - 60, 46, 34); win(pharmX + 62, skyH - 60, 46, 34);
+    R('#3f7f5a', pharmX + 4, skyH - 40, 108, 6);          // awning
+    ctx.fillStyle = '#e8e4d6';
+    for (let ax = pharmX + 4; ax < pharmX + 112; ax += 12) ctx.fillRect(ax, skyH - 40, 6, 6);
+    snowRoofs.push([pharmX, skyH - 99, 118]);
+    // Burning sedan
+    const carX = pharmX + 30;
+    box('#7a2c34', carX, skyH - 20, 52, 15);
+    box('#7a2c34', carX + 10, skyH - 31, 30, 12);
+    R('#c9d4dc', carX + 13, skyH - 28, 10, 7); R('#c9d4dc', carX + 26, skyH - 28, 10, 7);
+    R('#1d1612', carX + 8, skyH - 8, 10, 8); R('#1d1612', carX + 36, skyH - 8, 10, 8);
+    if (!G.paused && Math.random() < 0.6) {
+      G.particles.push({
+        x: carX + 14 + Math.random() * 20, y: skyH - 32,
+        vx: (Math.random() - 0.5) * 0.8, vy: -1.2 - Math.random() * 1.5,
+        life: 30, color: Math.random() < 0.5 ? '#f39c12' : '#e74c3c'
+      });
+    }
+  }
+
+  // 9. Food Mart: beige walls, red/white awning, yellow EVAC placards, police car
+  const foodX = hatchX - 212;
+  {
+    box('#d3c3a2', foodX, skyH - 82, 112, 82);
+    box('#f4f1e8', foodX + 14, skyH - 76, 84, 14);
+    ctx.fillStyle = '#3a2f26'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('ПРОДУКТЫ', foodX + 24, skyH - 65);
+    win(foodX + 8, skyH - 44, 96, 36);
+    R('#c4392b', foodX - 3, skyH - 50, 118, 9);           // awning
+    ctx.fillStyle = '#f4f1e8';
+    for (let ax = foodX - 3; ax < foodX + 115; ax += 14) ctx.fillRect(ax, skyH - 50, 7, 9);
+    snowRoofs.push([foodX, skyH - 83, 112]);
+    // Yellow EVAC placards
+    R('#e3b922', foodX + 62, skyH - 34, 20, 11); R('#1d1612', foodX + 65, skyH - 30, 14, 2);
+    R('#e3b922', foodX + 90, skyH - 30, 20, 11); R('#1d1612', foodX + 93, skyH - 26, 14, 2);
+    // Police car
+    box('#2a2f45', foodX + 10, skyH - 18, 50, 14);
+    box('#2a2f45', foodX + 20, skyH - 28, 28, 11);
+    R('#ffffff', foodX + 10, skyH - 12, 50, 4);
+    R('#c9d4dc', foodX + 23, skyH - 25, 10, 6); R('#c9d4dc', foodX + 36, skyH - 25, 10, 6);
+    R('#e5493a', foodX + 28, skyH - 31, 6, 3); R('#3a7bd5', foodX + 36, skyH - 31, 6, 3);
+    R('#1d1612', foodX + 16, skyH - 8, 9, 8); R('#1d1612', foodX + 44, skyH - 8, 9, 8);
+  }
+
+  // 10. Red-brick apartment building with arched windows, right next to the shaft
+  const brickX = hatchX - 20;
+  {
+    const bx = brickX - 82, bw = 82, bh = 128;
+    box('#9a4a36', bx, skyH - bh, bw, bh);
+    ctx.fillStyle = 'rgba(60,20,12,0.28)';
+    for (let by = skyH - bh + 6; by < skyH; by += 8) ctx.fillRect(bx, by, bw, 1);
+    R('#d9cdb4', bx - 3, skyH - bh - 4, bw + 6, 6);           // cornice
+    R('#5f2a1e', bx - 3, skyH - bh + 2, bw + 6, 2);
+    for (let wy = skyH - bh + 16; wy < skyH - 44; wy += 36) {
+      for (const wx of [bx + 12, bx + 48]) {
+        R(OUT, wx - 1, wy - 1, 20, 28);
+        win(wx, wy, 18, 26);
+        R('#d9cdb4', wx - 2, wy - 3, 22, 2);
+      }
+    }
+    R('#2d5a36', bx + 10, skyH - 34, 62, 14);                 // green awning over the entrance
+    R('#2b1f19', bx + 28, skyH - 22, 26, 22);
+    ctx.fillStyle = '#e8e4d6'; ctx.font = 'bold 6px monospace'; ctx.fillText('ЗАРАЖЕНО', bx + 16, skyH - 24);
+    // Flag on the roof
+    R('#2f261e', bx + bw - 14, skyH - bh - 30, 2, 28);
+    R('#7a2c34', bx + bw - 12, skyH - bh - 30, 12, 7);
+    snowRoofs.push([bx - 3, skyH - bh - 5, bw + 6]);
+  }
+
+  // 11. Dead tree between the shops, bare and twisted
+  {
+    const dx = hatchX - 640 + 120;
+    ctx.strokeStyle = '#3a2f2a'; ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(x1, skyH - 100);
-    ctx.quadraticCurveTo((x1 + x2) / 2, skyH - 85, x2, skyH - 100);
+    ctx.moveTo(dx, skyH); ctx.lineTo(dx + 2, skyH - 60); ctx.lineTo(dx - 8, skyH - 92);
+    ctx.moveTo(dx + 2, skyH - 60); ctx.lineTo(dx + 16, skyH - 88);
+    ctx.moveTo(dx - 4, skyH - 78); ctx.lineTo(dx - 20, skyH - 82);
     ctx.stroke();
   }
-
-  // 4. Gas Station
-  const gasX = hatchX - 420;
-  ctx.fillStyle = '#f4f1ea';
-  ctx.fillRect(gasX - 35, skyH - 115, 36, 26);
-  ctx.strokeStyle = '#c0392b';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(gasX - 35, skyH - 115, 36, 26);
-  ctx.fillStyle = '#c0392b';
-  ctx.font = 'bold 9px sans-serif';
-  ctx.fillText('GAS', gasX - 28, skyH - 103);
-  ctx.fillStyle = '#111';
-  ctx.font = 'bold 8px monospace';
-  ctx.fillText('$9.99', gasX - 31, skyH - 93);
-
-  ctx.strokeStyle = '#444';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(gasX - 17, skyH - 89); ctx.lineTo(gasX - 17, skyH); ctx.stroke();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(gasX, skyH - 68, 110, 10);
-  ctx.fillStyle = '#c0392b';
-  ctx.fillRect(gasX, skyH - 72, 110, 4);
-  ctx.fillStyle = '#666';
-  ctx.fillRect(gasX + 15, skyH - 58, 6, 58);
-  ctx.fillRect(gasX + 85, skyH - 58, 6, 58);
-
-  // Blue Cargo Delivery Van
-  ctx.fillStyle = '#2980b9';
-  ctx.fillRect(gasX + 30, skyH - 34, 50, 24);
-  ctx.fillRect(gasX + 65, skyH - 26, 20, 16);
-  ctx.fillStyle = '#111';
-  ctx.beginPath();
-  ctx.arc(gasX + 42, skyH - 4, 6, 0, Math.PI * 2);
-  ctx.arc(gasX + 74, skyH - 4, 6, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 5. Small White Gatehouse Shack [ 4 INSIDE ]
-  const shackX = hatchX - 290;
-  ctx.fillStyle = '#f4f1ea';
-  ctx.fillRect(shackX, skyH - 56, 54, 56);
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(shackX, skyH - 56, 54, 56);
-  ctx.fillStyle = '#c0392b';
-  ctx.fillRect(shackX, skyH - 60, 54, 4);
-  ctx.fillStyle = '#c0392b';
-  ctx.font = 'bold 9px monospace';
-  ctx.fillText('4 INSIDE', shackX + 6, skyH - 12);
-  ctx.fillStyle = '#222b30';
-  ctx.fillRect(shackX + 8, skyH - 46, 20, 18);
-
-  // 6. Pharmacy Building with Green Cross & Burning Car
-  const pharmX = hatchX - 220;
-  ctx.fillStyle = '#7a8c79';
-  ctx.fillRect(pharmX, skyH - 85, 95, 85);
-  ctx.strokeStyle = '#384237';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(pharmX, skyH - 85, 95, 85);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 10px sans-serif';
-  ctx.fillText('PHARMACY', pharmX + 12, skyH - 66);
-  ctx.fillStyle = '#2ecc71';
-  ctx.fillRect(pharmX + 74, skyH - 74, 12, 4);
-  ctx.fillRect(pharmX + 78, skyH - 78, 4, 12);
-
-  // Burning Red Sedan
-  const carX = pharmX + 24;
-  ctx.fillStyle = '#8b2b2b';
-  ctx.fillRect(carX, skyH - 22, 46, 16);
-  ctx.fillRect(carX + 8, skyH - 32, 28, 12);
-  ctx.fillStyle = '#111';
-  ctx.beginPath();
-  ctx.arc(carX + 12, skyH - 4, 5, 0, Math.PI * 2);
-  ctx.arc(carX + 36, skyH - 4, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Fire particles & smoke
-  if (Math.random() < 0.6) {
-    G.particles.push({
-      x: carX + 16 + Math.random() * 18,
-      y: skyH - 28,
-      vx: (Math.random() - 0.5) * 0.8,
-      vy: -1.2 - Math.random() * 1.5,
-      life: 30,
-      color: Math.random() < 0.5 ? '#f39c12' : '#e74c3c'
-    });
-  }
-
-  // 7. FOOD MART with Red/White Awning & Police Car
-  const foodX = hatchX - 110;
-  ctx.fillStyle = '#cfc5b4';
-  ctx.fillRect(foodX, skyH - 75, 90, 75);
-  ctx.strokeStyle = '#383228';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(foodX, skyH - 75, 90, 75);
-  ctx.fillStyle = '#222';
-  ctx.font = 'bold 9px sans-serif';
-  ctx.fillText('FOOD MART', foodX + 16, skyH - 58);
-  ctx.fillStyle = '#c0392b';
-  ctx.fillRect(foodX, skyH - 50, 90, 8);
-  ctx.fillStyle = '#fff';
-  for (let ax = foodX; ax < foodX + 90; ax += 12) {
-    ctx.fillRect(ax, skyH - 50, 6, 8);
-  }
-  ctx.fillStyle = '#f1c40f';
-  ctx.fillRect(foodX + 5, skyH - 16, 24, 10);
-  ctx.fillStyle = '#000';
-  ctx.font = 'bold 7px sans-serif';
-  ctx.fillText('EVAC', foodX + 7, skyH - 8);
-
-  // 8. 2-Story Red Brick Apartment Building
-  const brickX = hatchX - 10;
-  ctx.fillStyle = '#873c2c';
-  ctx.fillRect(brickX - 90, skyH - 115, 80, 115);
-  ctx.strokeStyle = '#3d1b13';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(brickX - 90, skyH - 115, 80, 115);
-  ctx.fillStyle = '#1c1c1f';
-  for (let wy = skyH - 95; wy < skyH - 20; wy += 36) {
-    ctx.fillRect(brickX - 75, wy, 16, 22);
-    ctx.fillRect(brickX - 45, wy, 16, 22);
-  }
-  ctx.fillStyle = '#2d5a36';
-  ctx.fillRect(brickX - 85, skyH - 22, 38, 18);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 6.5px monospace';
-  ctx.fillText('INFECTED', brickX - 82, skyH - 10);
 
   // 9. Concrete Road Deck
   ctx.fillStyle = '#59554f';
@@ -351,12 +292,32 @@ export function drawSurfaceWorld(ctx, G) {
     ctx.fillRect(px, skyH + 14, 18, 22);
   }
 
-  // 10. The Hatch Collar & Fortifications
-  ctx.fillStyle = '#949089';
-  ctx.fillRect(hatchX - 14, skyH - 6, 44, 20);
-  ctx.strokeStyle = '#383633';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(hatchX - 14, skyH - 6, 44, 20);
+  // 10. The hatch over the shaft: concrete kerb, dark opening and a hinged steel lid
+  {
+    const hx = hatchX - 2, hw = 68;
+    // closed = 1: always in the game, animated during the prologue
+    const pt = G.prologue.t;
+    const clamp01 = v => Math.min(1, Math.max(0, v));
+    let closed = 1;
+    if (G.state !== 'game') {
+      if (pt < PROLOGUE.closeStart) closed = 1 - clamp01((pt - PROLOGUE.openStart) / (PROLOGUE.openEnd - PROLOGUE.openStart));
+      else closed = clamp01((pt - PROLOGUE.closeStart) / (PROLOGUE.closeEnd - PROLOGUE.closeStart));
+    }
+    R(OUT, hx - 8, skyH - 7, hw + 16, 22);
+    R('#949089', hx - 7, skyH - 6, hw + 14, 20);
+    R('#6e6a64', hx - 7, skyH - 6, hw + 14, 3);
+    if (closed < 1) R('#0b0a0a', hx, skyH - 1, hw, 14);             // open shaft mouth
+    // Steel lid, hinged on the left edge; swings up to ~110 degrees when open
+    ctx.save();
+    ctx.translate(hx, skyH - 6);
+    ctx.rotate(-(1 - closed) * 1.95);
+    R(OUT, -1, -6, hw + 2, 8);
+    R('#5b5f66', 0, -5, hw, 6);
+    R('#7d828a', 0, -5, hw, 2);
+    for (let rx = 6; rx < hw; rx += 12) R('#33363b', rx, -3, 2, 2);
+    R('#c4392b', hw / 2 - 6, -4, 12, 3);                            // handle
+    ctx.restore();
+  }
 
   // Stacked Sandbags Protection around the perimeter
   const sandCols = ['#756652', '#867661', '#6b5d4b'];
@@ -379,43 +340,31 @@ export function drawSurfaceWorld(ctx, G) {
     ctx.stroke();
   }
 
-  // Hatch cover
-  if (G.state === 'game' || G.prologue.t > 8500) {
-    ctx.fillStyle = '#4a4845';
-    ctx.beginPath();
-    ctx.arc(hatchX + 8, skyH - 6, 12, Math.PI, 0);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(hatchX + 8, skyH - 10, 4, 0, Math.PI * 2); ctx.stroke();
-  }
-
   // Wooden signpost: [ ◀ SHELTER ] and [ NO ENTRY ]
   ctx.fillStyle = '#fff';
-  ctx.fillRect(hatchX + 38, skyH - 42, 44, 14);
+  ctx.fillRect(hatchX + 82, skyH - 42, 44, 14);
   ctx.strokeStyle = '#222';
   ctx.lineWidth = 1.2;
-  ctx.strokeRect(hatchX + 38, skyH - 42, 44, 14);
+  ctx.strokeRect(hatchX + 82, skyH - 42, 44, 14);
   ctx.fillStyle = '#111';
   ctx.font = 'bold 7.5px sans-serif';
-  ctx.fillText('◀ SHELTER', hatchX + 41, skyH - 32);
+  ctx.fillText('◀ УБЕЖИЩЕ', hatchX + 85, skyH - 32);
 
   ctx.fillStyle = '#f1c40f';
-  ctx.fillRect(hatchX + 46, skyH - 26, 42, 12);
-  ctx.strokeRect(hatchX + 46, skyH - 26, 42, 12);
+  ctx.fillRect(hatchX + 90, skyH - 26, 42, 12);
+  ctx.strokeRect(hatchX + 90, skyH - 26, 42, 12);
   ctx.fillStyle = '#000';
   ctx.font = 'bold 7px sans-serif';
-  ctx.fillText('NO ENTRY', hatchX + 48, skyH - 17);
+  ctx.fillText('НЕТ ВХОДА', hatchX + 92, skyH - 17);
 
   // 11. Red Pickup Truck, or the spoil hill that grows as the colony digs deeper
   let treeX = hatchX + 180;
-  if (G.hasDirtMound) {
+  {
     // 0..1 over the 30 years; the hill starts small and ends up covering part of the town
     const growth = Math.min(1, Math.max(0, G.day / (365 * 30)));
-    const hillW = 170 + growth * 430;
-    const hillH = 80 + growth * 200;
-    const hx0 = hatchX + 36;
+    const hillW = 230 + growth * 370;
+    const hillH = 110 + growth * 170;
+    const hx0 = hatchX + (G.hasDirtMound ? 150 : 200);
     const hx1 = hx0 + hillW;
     const peakX = hx0 + hillW * 0.42;
     const peakY = skyH - hillH;
@@ -465,11 +414,12 @@ export function drawSurfaceWorld(ctx, G) {
       ctx.moveTo(peakX - 8, peakY - 36); ctx.lineTo(peakX + 8, peakY - 36);
       ctx.stroke();
       ctx.fillStyle = '#e74c3c';
-      if (Math.floor(Date.now() / 600) % 2 === 0) { ctx.beginPath(); ctx.arc(peakX, peakY - 72, 2.5, 0, Math.PI * 2); ctx.fill(); }
+      if (Math.floor(gameNow() / 600) % 2 === 0) { ctx.beginPath(); ctx.arc(peakX, peakY - 72, 2.5, 0, Math.PI * 2); ctx.fill(); }
     }
     treeX = Math.min(hx1 + 50, MAP_COLS * CELL_SIZE - 50);
-  } else {
-    const truckX = hatchX + 95;
+  }
+  if (!G.hasDirtMound) {
+    const truckX = hatchX + 150;
     ctx.fillStyle = '#9e3223';
     ctx.fillRect(truckX, skyH - 32, 65, 26);
     ctx.fillRect(truckX + 38, skyH - 44, 26, 16);
@@ -515,8 +465,6 @@ export function drawSurfaceWorld(ctx, G) {
   if (G.isWinterSnow) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-600, skyH - 3, MAP_COLS * CELL_SIZE + 1200, 4);
-    ctx.fillRect(gasX, skyH - 74, 110, 4);
-    ctx.fillRect(foodX, skyH - 77, 90, 4);
-    ctx.fillRect(brickX - 90, skyH - 117, 80, 4);
+    snowRoofs.forEach(([rx, ry, rw]) => ctx.fillRect(rx, ry - 3, rw, 4));
   }
 }

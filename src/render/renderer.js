@@ -1,9 +1,9 @@
 import { viewport } from '../core/viewport.js';
 import { getZoom } from '../core/camera.js';
 import { G } from '../core/state.js';
-import { CELL_SIZE, SURFACE_Y } from '../core/constants.js';
+import { CELL_SIZE, MAP_COLS, MAP_ROWS, SURFACE_Y, PROLOGUE, C_DIRT, C_EXCAVATED } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
-import { drawSurfaceWorld, drawRunningSurvivor, drawSpeechBubble, drawZombiePile } from './surface.js';
+import { drawSurfaceWorld, drawRunningSurvivor, drawSpeechBubble, drawZombiePile, drawWanderingZombies } from './surface.js';
 import { drawTerrain, drawCentralConcreteShaft } from './underground.js';
 import { drawRooms } from './room_props.js';
 import { drawCorridors } from './corridors.js';
@@ -71,50 +71,114 @@ function applyCamera() {
   ctx.imageSmoothingEnabled = false;
 }
 
+let shaftGridCache = null;
+/** Solid earth with only the main shaft dug down to `rows` (for the prologue, before the bunker is shown). */
+function getShaftOnlyGrid(rows) {
+  const hatchCol = Math.floor(MAP_COLS / 2);
+  if (!shaftGridCache) {
+    shaftGridCache = Array.from({ length: MAP_ROWS }, () => new Array(MAP_COLS).fill(C_DIRT));
+  }
+  shaftGridCache.forEach((row, r) => {
+    const open = r >= SURFACE_Y && r < rows;
+    row[hatchCol] = open ? C_EXCAVATED : C_DIRT;
+    row[hatchCol + 1] = open ? C_EXCAVATED : C_DIRT;
+  });
+  return shaftGridCache;
+}
+
 function renderPrologue() {
   const t = G.prologue.t;
   const hatchX = G.prologue.hatchX;
   const skyH = SURFACE_Y * CELL_SIZE;
 
   ctx.save();
-  if (G.shake > 0) {
-    ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
-  }
   applyCamera();
 
   drawSurfaceWorld(ctx, G);
-  drawTerrain(ctx, G);
-  drawCentralConcreteShaft(ctx, G);
-  drawCorridors(ctx, G);
-  drawRooms(ctx, G);
+  // Nothing of the bunker is visible until the first survivor reaches it: the earth is drawn solid
+  // (same layers and textures as the real terrain, so there is no seam), the shaft is revealed only
+  // as far down as the lowest climber has got, then the real bunker fades in.
+  {
+    const groundY0 = skyH - 2;
+    const floorY = (SURFACE_Y + 4 + 2.5) * CELL_SIZE;
+    let deepest = skyH;
+    Object.values(PROLOGUE.arrive).forEach(T => {
+      const dt = t - T;
+      if (dt > 0) deepest = Math.max(deepest, groundY0 + Math.min(1, dt / PROLOGUE.descend) * (floorY - groundY0));
+    });
+    const reveal = Math.min(1, Math.max(0, (t - (PROLOGUE.arrive.ELI + PROLOGUE.descend - 200)) / 900));
+    const shaftBottom = deepest + 30;
 
-  if (t < 8500) {
-    const p = Math.min(1, t / 7000);
-    const eliX = 140 + p * (hatchX - 130);
-    const noraX = 100 + p * (hatchX - 100);
-    const waltX = 70 + p * (hatchX - 70);
-    const rayX = 35 + p * (hatchX - 40);
-    const groundY = skyH - 2;
+    drawTerrain(ctx, { grid: getShaftOnlyGrid(Math.ceil(shaftBottom / CELL_SIZE)), day: G.day });
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-600, 0, MAP_COLS * CELL_SIZE + 1200, shaftBottom);
+    ctx.clip();
+    drawCentralConcreteShaft(ctx, G);
+    ctx.restore();
 
-    drawRunningSurvivor(ctx, eliX, groundY, '#2ecc71', 'ELI', t < 7200);
-    drawRunningSurvivor(ctx, noraX, groundY, '#e74c3c', 'NORA', t < 7600);
-    drawRunningSurvivor(ctx, waltX, groundY, '#f1c40f', 'WALT', t < 8400);
-    drawRunningSurvivor(ctx, rayX, groundY, '#3498db', 'RAY', t < 8000);
-
-    if (t > 1000 && t < 4500) {
-      drawSpeechBubble(ctx, eliX, groundY - 32, 'GO! GO!');
-    } else if (t >= 4500 && t < 7000) {
-      drawSpeechBubble(ctx, waltX, groundY - 32, 'KEEP RUNNING!');
-    } else if (t >= 7000 && t < 8500) {
-      drawSpeechBubble(ctx, waltX, groundY - 32, 'Down, down, down!');
+    if (reveal > 0) {
+      ctx.globalAlpha = reveal;
+      drawTerrain(ctx, G);
+      drawCentralConcreteShaft(ctx, G);
+      drawCorridors(ctx, G);
+      drawRooms(ctx, G);
+      ctx.globalAlpha = 1;
     }
   }
 
-  const hordeLeadX = (t < 7500)
-    ? (t / 7000) * (hatchX - 100) - 70
-    : hatchX - 25;
+  {
+    // Runners string out along the street, then each climbs down the shaft ladder in turn
+    const ladderX = hatchX + 33;
+    const groundY = skyH - 2;
+    const runners = [
+      { name: 'ELI', color: '#a93226', from: 150, wobble: 0 },
+      { name: 'NORA', color: '#dcdde1', from: 105, wobble: 1.3 },
+      { name: 'WALT', color: '#d35400', from: 72, wobble: 2.1 },
+      { name: 'RAY', color: '#1f3a52', from: 36, wobble: 3.4 }
+    ];
+    const pos = {};
+    const shelterY = (SURFACE_Y + 4 + 2.5) * CELL_SIZE;          // floor of the shelter room
+    const depth = shelterY - groundY;
+    runners.forEach(r => {
+      const T = PROLOGUE.arrive[r.name];
+      const dt = t - T;
+      const home = G.colonists.find(c => c.id === r.name.toLowerCase());
+      const homeX = home && home.x ? home.x : ladderX;
+      let x, y, pose = 'run', facing = 1;
+      if (dt < 0) {
+        x = r.from + (ladderX - r.from) * (t / T) + Math.sin(t * 0.004 + r.wobble) * 3 * (1 - t / T);
+        y = groundY;
+      } else if (dt < PROLOGUE.descend) {
+        x = ladderX;
+        y = groundY + (dt / PROLOGUE.descend) * depth;
+        pose = 'climb';
+      } else {
+        const k = Math.min(1, (dt - PROLOGUE.descend) / PROLOGUE.walkIn);
+        x = ladderX + (homeX - ladderX) * k;
+        y = shelterY;
+        facing = homeX >= ladderX ? 1 : -1;
+        pose = k < 1 ? 'walk' : 'stand';
+      }
+      pos[r.name] = { x, y };
+      drawRunningSurvivor(ctx, x, y, r.color, r.name, true, false, pose, facing);
+    });
 
-  drawZombiePile(ctx, hordeLeadX, skyH, t >= 8500);
+    const say = (who, text) => {
+      const p = pos[who];
+      if (p && p.y !== undefined) drawSpeechBubble(ctx, p.x, Math.min(p.y, groundY + 30) - 62, text);
+    };
+    if (t > 1500 && t < 7500) say('ELI', 'БЕГОМ! БЕГОМ!');
+    else if (t >= 7500 && t < 11000) say('WALT', 'СТАРОЕ УБЕЖИЩЕ! ШАХТНЫЙ ДВОР!');
+    else if (t >= 12500 && t < 17000) say('NORA', 'ВНИЗ, ВНИЗ, ВНИЗ!');
+    else if (t >= 18000 && t < PROLOGUE.closeEnd) say('RAY', 'ЗАКРЫВАЙ!');
+  }
+
+  // The horde gains on the runners and reaches the hatch just as the lid slams
+  const hordeLeadX = -300 + Math.min(1, t / PROLOGUE.closeEnd) * (hatchX + 310);
+
+  // After the lid slams the horde stops pressing on it and mills around the street
+  drawZombiePile(ctx, hordeLeadX, skyH, t >= PROLOGUE.closeEnd ? t - PROLOGUE.closeEnd : -1);
   ctx.restore();
 }
 
@@ -131,13 +195,11 @@ export function render() {
   const camY = Math.floor(G.cam.y);
 
   ctx.save();
-  if (G.shake > 0) {
-    ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
-  }
   applyCamera();
 
   // 1. World Rendering Layers
   drawSurfaceWorld(ctx, G);
+  if (G.day < 365 * 3) drawWanderingZombies(ctx, G.prologue.hatchX - 120, SURFACE_Y * CELL_SIZE, 14, 900);
   drawTerrain(ctx, G);
   drawCentralConcreteShaft(ctx, G);
   drawCorridors(ctx, G);

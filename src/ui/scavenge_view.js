@@ -3,6 +3,7 @@
  * prepared by systems/events.js and reports the selection via confirm(teamIds, destId).
  */
 import { eventBus } from '../core/event_bus.js';
+import { roleLabel } from '../core/i18n.js';
 
 export function showScavengeDialog({ alive, isNight, destinations, confirm }) {
   const modal = document.getElementById('modal-screen');
@@ -26,7 +27,7 @@ export function showScavengeDialog({ alive, isNight, destinations, confirm }) {
     <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#1a1a1f; border-radius:6px; cursor:pointer; margin:3px 0;">
       <input type="checkbox" class="scav-check" value="${c.id}" style="accent-color:#d4af37;">
       <span style="font-size:18px;">${c.icon}</span>
-      <span style="color:#e8d5b7; font-size:12px;">${c.name} (${c.role}) HP:${c.hp}</span>
+      <span style="color:#e8d5b7; font-size:12px;">${c.name} (${roleLabel(c.role)}) ЗДОР.:${c.hp}</span>
     </label>
   `).join('');
 

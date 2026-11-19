@@ -4,6 +4,7 @@
 import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
 import { ensureMemorial } from '../systems/memorial.js';
+import { roleLabel } from '../core/i18n.js';
 
 export function openMemorialModal() {
   ensureMemorial();
@@ -91,7 +92,7 @@ export function renderMemorialModal() {
             <div>
               <div style="font-weight:bold; font-size:14px; color:#cfbfad;">
                 ${r.name}
-                <span style="font-size:11px; color:#666; font-weight:normal;"> · ${r.role}</span>
+                <span style="font-size:11px; color:#666; font-weight:normal;"> · ${roleLabel(r.role)}</span>
               </div>
               <div style="font-size:11px; color:#8b1a1a; margin-top:1px;">☠ ${r.cause}</div>
             </div>

@@ -2,6 +2,7 @@ import { G } from '../core/state.js';
 import { CELL_SIZE, MAP_COLS, MAP_ROWS } from '../core/constants.js';
 import { eventBus } from '../core/event_bus.js';
 import { showColonistModal } from './modals.js';
+import { roleLabel } from '../core/i18n.js';
 
 export function setElText(id, text) {
   const el = document.getElementById(id);
@@ -136,9 +137,9 @@ export function updateHUD() {
   const year = Math.floor((G.day - 1) / 365) + 1;
   const dayInYear = ((G.day - 1) % 365) + 1;
 
-  setElText('sb-year-text', `YEAR ${year}`);
-  setElText('sb-day-text', `DAY ${dayInYear}`);
-  setElText('pill-title', (G.day === 1) ? 'DAY 1 · THE OUTBREAK' : `DAY ${G.day} · YEAR ${year}`);
+  setElText('sb-year-text', `ГОД ${year}`);
+  setElText('sb-day-text', `ДЕНЬ ${dayInYear}`);
+  setElText('pill-title', (G.day === 1) ? 'ДЕНЬ 1 · НАЧАЛО ЗАРАЖЕНИЯ' : `ДЕНЬ ${G.day} · ГОД ${year}`);
 
   const isNight = (G.timeHour >= 21 || G.timeHour < 6);
   setElText('sb-time-icon', isNight ? '🌙' : '☀️');
@@ -203,7 +204,7 @@ export function updateHUD() {
         <div class="sb-person-avatar">${c.icon}</div>
         <div class="sb-person-info">
           <div class="sb-person-name">${c.name}</div>
-          <div class="sb-person-sub">AGE ${c.age} · ${c.status === 'dead' ? 'DIED' : c.role}</div>
+          <div class="sb-person-sub">ВОЗРАСТ ${c.age} · ${c.status === 'dead' ? 'ПОГИБ' : roleLabel(c.role)}</div>
         </div>
       `;
       peopleGrid.appendChild(card);

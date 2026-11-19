@@ -26,7 +26,7 @@ export function calcResourceRates() {
   const foodConsumption = pop * 0.15 * foodMultiplier;
 
   // Water: each pump produces 4/day, pop consumes 0.12/person/day, hydro turbines give unlimited
-  const hasHydro = G.rooms.some(r => r.id === 'hydro_pump' || (r.name && r.name.includes('HYDRO')));
+  const hasHydro = G.rooms.some(r => r.id === 'hydro_pump' || (r.name && r.name.includes('ГИДРО')));
   G.mechanics.waterProduction = hasHydro ? Math.max(pop * 0.2, pumps * 4) : pumps * 4;
   const waterDrain = G.mechanics.waterDrainMultiplier || 1.0;
   const waterConsumption = pop * 0.12 * waterDrain;
@@ -39,7 +39,7 @@ export function calcResourceRates() {
   G.mechanics.popCap = 8 + quarters * 6;
 
   // Defense: base 10 + 15 per armory/guard room + 2 per guard colonist + curfew bonus + tech bonus
-  const armories = G.rooms.filter(r => (r.name && (r.name.includes('ARMORY') || r.name.includes('GUARD'))) || r.type === 'armory').length;
+  const armories = G.rooms.filter(r => (r.name && (r.name.includes('АРСЕНАЛ') || r.name.includes('ОХРАН'))) || r.type === 'armory').length;
   const guards = G.colonists.filter(c => c.role === 'GUARD' && c.status === 'alive').length;
   const curfewBonus = (G.laws && G.laws.curfew) ? 10 : 0;
   const baseDefBonus = G.mechanics.baseDefenseBonus || 0;

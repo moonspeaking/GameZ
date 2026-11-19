@@ -3,7 +3,7 @@ import { eventBus } from './core/event_bus.js';
 import { AudioSys, toggleSound } from './audio/audio_sys.js';
 import { initGrid } from './world/grid.js';
 import { initRenderer, resizeCanvas } from './render/renderer.js';
-import { initInput, setSpeed, setToolMode, zoomIn, zoomOut, zoomReset, toggleMainMenu } from './ui/input.js';
+import { initInput, setSpeed, togglePause, setToolMode, zoomIn, zoomOut, zoomReset, toggleMainMenu } from './ui/input.js';
 import { updateHUD, toggleMobileHUD, showToast, addLog } from './ui/hud.js';
 import {
   openChaptersModal, closeChaptersModal,
@@ -11,7 +11,6 @@ import {
   openSettingsModal, closeSettingsModal, applySettings,
   toggleBuildMenu, cancelPlacement
 } from './ui/modals.js';
-import { cycleCamera } from './render/surveillance.js';
 import { startPrologue, finishPrologue, sealBulkheads, colonistsFightBreach, CHAPTERS } from './systems/story.js';
 import { handleLawClick } from './systems/laws.js';
 import { setGameMode } from './systems/democracy.js';
@@ -34,6 +33,7 @@ window.eventBus = eventBus;
 window.AudioSys = AudioSys;
 window.toggleSound = toggleSound;
 window.setSpeed = setSpeed;
+window.togglePause = togglePause;
 window.setToolMode = setToolMode;
 window.zoomIn = zoomIn;
 window.zoomOut = zoomOut;
@@ -42,7 +42,6 @@ window.toggleMainMenu = toggleMainMenu;
 window.cancelPlacement = cancelPlacement;
 window.toggleBuildMenu = toggleBuildMenu;
 window.toggleMobileHUD = toggleMobileHUD;
-window.cycleCamera = cycleCamera;
 window.finishPrologue = finishPrologue;
 window.openChaptersModal = openChaptersModal;
 window.closeChaptersModal = closeChaptersModal;

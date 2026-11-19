@@ -7,6 +7,7 @@
  */
 import { G } from './state.js';
 import { eventBus } from './event_bus.js';
+import { GAME_MINUTES_PER_MS } from './constants.js';
 
 const updates = { prologue: [], game: [] };
 let renderFn = null;
@@ -23,6 +24,7 @@ export function setRenderFn(fn) {
 }
 
 export function update(dt) {
+  if (G.paused) return;
   if (G.state === 'prologue') {
     updates.prologue.forEach(fn => fn(dt));
     return;
@@ -33,7 +35,7 @@ export function update(dt) {
   const simDt = dt * G.speed;
 
   // Time simulation
-  G.timeMin += simDt * 0.05;
+  G.timeMin += simDt * GAME_MINUTES_PER_MS;
   if (G.timeMin >= 60) {
     G.timeMin = 0;
     G.timeHour = (G.timeHour + 1) % 24;

@@ -1,5 +1,6 @@
 import { G } from '../core/state.js';
 import { eventBus } from '../core/event_bus.js';
+import { gameNow } from '../core/clock.js';
 
 export function updateSurveillanceFeed(G) {
   const camCanvas = document.getElementById('cam-feed-canvas');
@@ -9,7 +10,7 @@ export function updateSurveillanceFeed(G) {
 
   const cw = camCanvas.width;
   const ch = camCanvas.height;
-  const t = Date.now() * 0.003;
+  const t = gameNow() * 0.003;
 
   camCtx.fillStyle = '#06130b';
   camCtx.fillRect(0, 0, cw, ch);
@@ -37,7 +38,7 @@ export function updateSurveillanceFeed(G) {
       camCtx.lineTo(cw / 2 + 40, ch);
       camCtx.fill();
       camCtx.fillStyle = '#5dade2';
-      camCtx.fillText('MARCUS', cw / 2 - 16, ch - 54);
+      camCtx.fillText('МАРКУС', cw / 2 - 16, ch - 54);
       camCtx.fillRect(cw / 2 - 3, ch - 50, 6, 12);
     }
 
@@ -64,7 +65,7 @@ export function updateSurveillanceFeed(G) {
       camCtx.stroke();
     }
 
-    const climbY = ch - 20 - ((Date.now() * 0.04) % (ch - 30));
+    const climbY = ch - 20 - ((gameNow() * 0.04) % (ch - 30));
     camCtx.fillStyle = '#78b58f';
     camCtx.fillRect(cw / 2 - 4, climbY, 8, 14);
     camCtx.beginPath(); camCtx.arc(cw / 2, climbY - 4, 3.5, 0, Math.PI * 2); camCtx.fill();
@@ -119,15 +120,15 @@ export function updateSurveillanceFeed(G) {
   camCtx.strokeRect(6, ch - 18, 12, 12);
   camCtx.strokeRect(cw - 18, ch - 18, 12, 12);
 
-  const sec = Math.floor((Date.now() / 1000) % 60).toString().padStart(2, '0');
-  const min = Math.floor((Date.now() / 60000) % 60).toString().padStart(2, '0');
+  const sec = Math.floor((gameNow() / 1000) % 60).toString().padStart(2, '0');
+  const min = Math.floor((gameNow() / 60000) % 60).toString().padStart(2, '0');
   const timerEl = document.getElementById('cam-timer');
   if (timerEl) timerEl.textContent = `00:${min}:${sec}`;
 }
 
 export function cycleCamera() {
   G.activeCamIdx = (G.activeCamIdx + 1) % 4;
-  const names = ['CAM 1 · HATCH YARD', 'CAM 2 · MAIN SHAFT', 'CAM 3 · SURFACE STREET', 'CAM 4 · TURBINE HALL'];
+  const names = ['КАМ. 1 · ДВОР У ЛЮКА', 'КАМ. 2 · ГЛАВНЫЙ СТВОЛ', 'КАМ. 3 · УЛИЦА', 'КАМ. 4 · ЗАЛ ТУРБИН'];
   const nameEl = document.getElementById('cam-name');
   if (nameEl) nameEl.textContent = names[G.activeCamIdx];
   eventBus.emit('sound', { type: 'metal_clang' });

@@ -142,7 +142,7 @@ export function evaluateAutonomousBuilding() {
   const farms = countRoomsByType('farm') + countRoomsByType('hydro_uv');
   const pumps = countRoomsByType('waterPump');
   const gens = countRoomsByType('generator');
-  const armories = G.rooms.filter(r => r.type === 'armory' || (r.name && r.name.includes('ARMORY'))).length;
+  const armories = G.rooms.filter(r => r.type === 'armory' || (r.name && r.name.includes('АРСЕНАЛ'))).length;
 
   if (G.res.food < pop * 15 && farms < 6) {
     candidateRoom = ROOM_CATALOG.find(r => r.type === 'hydro_uv' && G.res.materials >= r.matCost) ||

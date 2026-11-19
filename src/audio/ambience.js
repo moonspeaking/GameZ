@@ -32,6 +32,8 @@ export const AmbienceEngine = {
   },
 
   startDrone() {
+    // The constant generator hum was removed: a single monotone sound is tiring.
+    return;
     if (!this.ctx || this.droneGain) return;
     try {
       const now = this.ctx.currentTime;
