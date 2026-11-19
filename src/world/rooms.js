@@ -203,3 +203,47 @@ export function autoPlaceRoom(roomDef) {
     return false;
   }
 }
+
+/**
+ * Corridors: walkways linking every room to the central shaft (or to the next room on the way).
+ * Pure layout data in pixels: [{ x1, x2, y, h }] with y = top edge. Rendering lives in render/corridors.js.
+ */
+export const CORRIDOR_CELLS_HIGH = 2;
+
+export function getCorridors(state, cell) {
+  const rooms = (state.rooms || []).filter(r => r.state !== 'blueprint');
+  const hatchCol = Math.floor(MAP_COLS / 2);
+  const shaftL = hatchCol * cell;             // left edge of the 2-cell shaft
+  const shaftR = (hatchCol + 2) * cell;       // right edge
+  const out = [];
+
+  rooms.forEach(r => {
+    const left = r.x * cell, right = (r.x + r.w) * cell;
+    const top = r.y, bottom = r.y + r.h;
+    const spansShaft = left < shaftR && right > shaftL;
+    if (spansShaft) return;
+
+    const toRight = right <= shaftL; // room is left of the shaft, so walk right
+    let target = toRight ? shaftL : shaftR;
+
+    // Stop at the nearest room in the way (same rows), so chains of rooms connect in turn.
+    rooms.forEach(o => {
+      if (o === r) return;
+      const rowOverlap = o.y < bottom && o.y + o.h > top;
+      if (!rowOverlap) return;
+      if (toRight) {
+        const ol = o.x * cell;
+        if (ol >= right && ol < target) target = ol;
+      } else {
+        const or = (o.x + o.w) * cell;
+        if (or <= left && or > target) target = or;
+      }
+    });
+
+    const x1 = toRight ? right : target;
+    const x2 = toRight ? target : left;
+    if (x2 - x1 <= 2) return;
+    out.push({ x1, x2, y: (bottom - CORRIDOR_CELLS_HIGH) * cell, h: CORRIDOR_CELLS_HIGH * cell });
+  });
+  return out;
+}

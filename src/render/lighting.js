@@ -4,6 +4,7 @@
  * miner headlamp cones, blackout emergency diodes, and Red Alert strobes.
  */
 import { CELL_SIZE, SURFACE_Y, MAP_COLS, MAP_ROWS } from '../core/constants.js';
+import { getCorridors } from '../world/rooms.js';
 
 let lightCanvas = null;
 let lightCtx = null;
@@ -108,6 +109,25 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
         lCtx.fillStyle = radGrad;
         lCtx.beginPath();
         lCtx.arc(lx, ly + rh * 0.4, rad, 0, Math.PI * 2);
+        lCtx.fill();
+      }
+    });
+  }
+
+  // Corridor ceiling lamps (soft warm pools along each walkway)
+  if (!isBlackout) {
+    getCorridors(G, CELL_SIZE).forEach(c => {
+      const cy = c.y + 10 - camY;
+      if (cy < -80 || cy > worldH + 80) return;
+      for (let x = c.x1 + 40; x < c.x2 - 10; x += 96) {
+        const lx = x - camX;
+        if (lx < -80 || lx > worldW + 80) continue;
+        const g = lCtx.createRadialGradient(lx, cy, 4, lx, cy + 10, 52);
+        g.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+        g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        lCtx.fillStyle = g;
+        lCtx.beginPath();
+        lCtx.arc(lx, cy + 10, 52, 0, Math.PI * 2);
         lCtx.fill();
       }
     });

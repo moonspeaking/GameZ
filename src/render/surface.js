@@ -1,4 +1,5 @@
 import { CELL_SIZE, MAP_COLS, SURFACE_Y } from '../core/constants.js';
+import { getStrataPattern } from './procedural_textures.js';
 
 export function drawRunningSurvivor(ctx, x, y, color, name, isRunning) {
   if (!isRunning) return;
@@ -133,6 +134,19 @@ export function drawSurfaceWorld(ctx, G) {
   for (let bx = -400; bx < MAP_COLS * CELL_SIZE + 400; bx += 85) {
     const bh = 110 + Math.sin(bx * 0.05) * 45;
     ctx.fillRect(bx, skyH - bh, 70, bh);
+  }
+
+  // Sun by day, moon by night (behind the buildings)
+  {
+    const isNight = G.timeHour >= 21 || G.timeHour < 5;
+    const bodyX = hatchX - 330, bodyY = skyH - 195;
+    const glow = ctx.createRadialGradient(bodyX, bodyY, 4, bodyX, bodyY, 70);
+    glow.addColorStop(0, isNight ? 'rgba(200, 215, 240, 0.35)' : 'rgba(255, 238, 180, 0.55)');
+    glow.addColorStop(1, 'rgba(255, 238, 180, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(bodyX - 70, bodyY - 70, 140, 140);
+    ctx.fillStyle = isNight ? '#dfe6f3' : '#fff3c4';
+    ctx.beginPath(); ctx.arc(bodyX, bodyY, isNight ? 11 : 14, 0, Math.PI * 2); ctx.fill();
   }
 
   // 2. High Voltage Electrical Transmission Pylon Tower
@@ -375,26 +389,66 @@ export function drawSurfaceWorld(ctx, G) {
   ctx.font = 'bold 7px sans-serif';
   ctx.fillText('NO ENTRY', hatchX + 48, skyH - 17);
 
-  // 11. Red Pickup Truck or Excavated Spoil Mound
+  // 11. Red Pickup Truck, or the spoil hill that grows as the colony digs deeper
+  let treeX = hatchX + 180;
   if (G.hasDirtMound) {
-    const moundX = hatchX + 60;
-    ctx.fillStyle = '#6e543c';
-    ctx.beginPath();
-    ctx.moveTo(moundX, skyH);
-    ctx.quadraticCurveTo(moundX + 80, skyH - 90, moundX + 160, skyH);
-    ctx.fill();
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(moundX + 20, skyH - 20); ctx.lineTo(moundX + 140, skyH - 20);
-    ctx.stroke();
-    if (G.day > 365 * 10) {
-      ctx.strokeStyle = '#888';
-      ctx.lineWidth = 2;
+    // 0..1 over the 30 years; the hill starts small and ends up covering part of the town
+    const growth = Math.min(1, Math.max(0, G.day / (365 * 30)));
+    const hillW = 170 + growth * 430;
+    const hillH = 80 + growth * 200;
+    const hx0 = hatchX + 36;
+    const hx1 = hx0 + hillW;
+    const peakX = hx0 + hillW * 0.42;
+    const peakY = skyH - hillH;
+
+    const hillPath = () => {
       ctx.beginPath();
-      ctx.moveTo(moundX + 80, skyH - 90); ctx.lineTo(moundX + 80, skyH - 210);
-      ctx.stroke();
+      ctx.moveTo(hx0 - 20, skyH + 2);
+      ctx.bezierCurveTo(hx0 + hillW * 0.12, skyH - hillH * 0.15, peakX - hillW * 0.18, peakY + hillH * 0.02, peakX, peakY);
+      ctx.bezierCurveTo(peakX + hillW * 0.2, peakY + hillH * 0.02, hx1 - hillW * 0.14, skyH - hillH * 0.2, hx1 + 20, skyH + 2);
+      ctx.closePath();
+    };
+
+    // Soil texture (same earth as underground topsoil)
+    hillPath();
+    ctx.fillStyle = getStrataPattern(ctx, 0) || '#6e4c2c';
+    ctx.fill();
+    // Light from the upper left, shade on the right flank
+    const shade = ctx.createLinearGradient(hx0, peakY, hx1, skyH);
+    shade.addColorStop(0, 'rgba(255, 225, 170, 0.22)');
+    shade.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
+    shade.addColorStop(1, 'rgba(20, 10, 4, 0.35)');
+    hillPath();
+    ctx.fillStyle = shade;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(30, 16, 6, 0.8)';
+    ctx.lineWidth = 2;
+    hillPath();
+    ctx.stroke();
+
+    // Sparse grass tufts along the crest
+    ctx.fillStyle = G.isWinterSnow ? '#e9edf0' : '#6b7d3a';
+    for (let i = 0; i < 26; i++) {
+      const t = i / 25;
+      const gx = hx0 + t * hillW;
+      const u = (gx - hx0) / hillW;
+      const gy = skyH - hillH * Math.sin(Math.min(1, u / 0.84 + 0.02) * Math.PI) * 0.97;
+      if (gy < skyH - 6) ctx.fillRect(gx - 3, gy + 1, 6 + (i % 3) * 2, 3);
     }
+
+    // Vent stack / antenna on the crest once the city is old
+    if (G.day > 365 * 10) {
+      ctx.strokeStyle = '#8a8f96';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(peakX, peakY + 4); ctx.lineTo(peakX, peakY - 70);
+      ctx.moveTo(peakX - 12, peakY - 52); ctx.lineTo(peakX + 12, peakY - 52);
+      ctx.moveTo(peakX - 8, peakY - 36); ctx.lineTo(peakX + 8, peakY - 36);
+      ctx.stroke();
+      ctx.fillStyle = '#e74c3c';
+      if (Math.floor(Date.now() / 600) % 2 === 0) { ctx.beginPath(); ctx.arc(peakX, peakY - 72, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    }
+    treeX = Math.min(hx1 + 50, MAP_COLS * CELL_SIZE - 50);
   } else {
     const truckX = hatchX + 95;
     ctx.fillStyle = '#9e3223';
@@ -414,7 +468,6 @@ export function drawSurfaceWorld(ctx, G) {
   }
 
   // Birch Tree with autumn leaves and deep roots
-  const treeX = hatchX + 180;
   ctx.fillStyle = '#e5dfd3';
   ctx.fillRect(treeX - 4, skyH - 110, 8, 110);
   ctx.fillStyle = G.isWinterSnow ? '#556b2f' : '#d35400';

@@ -6,6 +6,7 @@ import { eventBus } from '../core/event_bus.js';
 import { drawSurfaceWorld, drawRunningSurvivor, drawSpeechBubble, drawZombiePile } from './surface.js';
 import { drawTerrain, drawCentralConcreteShaft } from './underground.js';
 import { drawRooms } from './room_props.js';
+import { drawCorridors } from './corridors.js';
 import { drawBlueprints, drawInteractivePlacementOverlay } from './placement_overlay.js';
 import { drawColonists } from './colonist_sprites.js';
 import { updateSurveillanceFeed } from './surveillance.js';
@@ -84,6 +85,7 @@ function renderPrologue() {
   drawSurfaceWorld(ctx, G);
   drawTerrain(ctx, G);
   drawCentralConcreteShaft(ctx, G);
+  drawCorridors(ctx, G);
   drawRooms(ctx, G);
 
   if (t < 8500) {
@@ -138,6 +140,7 @@ export function render() {
   drawSurfaceWorld(ctx, G);
   drawTerrain(ctx, G);
   drawCentralConcreteShaft(ctx, G);
+  drawCorridors(ctx, G);
   drawRooms(ctx, G);
   drawBlueprints(ctx, G);
   drawInteractivePlacementOverlay(ctx, G);
