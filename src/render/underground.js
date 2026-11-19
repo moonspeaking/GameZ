@@ -3,11 +3,11 @@ import { getStrataPattern, getConcretePattern, getSteelPattern, getHazardPattern
 
 export function drawTerrain(ctx, G) {
   const strata = [
-    { start: SURFACE_Y, end: SURFACE_Y + 10, patternIdx: 0, tint: '#3b2819' }, // Topsoil & Root Zone
-    { start: SURFACE_Y + 10, end: SURFACE_Y + 24, patternIdx: 1, tint: '#322013' }, // Compacted Silt & Clay
-    { start: SURFACE_Y + 24, end: SURFACE_Y + 38, patternIdx: 2, tint: '#26180e' }, // Dense Shale & Pre-war Drift
-    { start: SURFACE_Y + 38, end: 46, patternIdx: 3, tint: '#1b1410' }, // Deep Slate & River Cavern
-    { start: 46, end: MAP_ROWS, patternIdx: 4, tint: '#131217' } // Basalt Bedrock
+    { start: SURFACE_Y, end: SURFACE_Y + 10, patternIdx: 0, tint: '#6e4c2c' }, // Topsoil & Root Zone
+    { start: SURFACE_Y + 10, end: SURFACE_Y + 24, patternIdx: 1, tint: '#5e4026' }, // Compacted Silt & Clay
+    { start: SURFACE_Y + 24, end: SURFACE_Y + 38, patternIdx: 2, tint: '#4d3520' }, // Dense Shale & Pre-war Drift
+    { start: SURFACE_Y + 38, end: 46, patternIdx: 3, tint: '#3b2a1b' }, // Deep Slate & River Cavern
+    { start: 46, end: MAP_ROWS, patternIdx: 4, tint: '#2a2630' } // Basalt Bedrock
   ];
 
   for (let r = SURFACE_Y; r < MAP_ROWS; r++) {
@@ -22,6 +22,45 @@ export function drawTerrain(ctx, G) {
       }
     }
   }
+
+  // Excavated cavities: dark warm back wall instead of a see-through void
+  ctx.fillStyle = '#2b1c11';
+  for (let r = SURFACE_Y; r < MAP_ROWS; r++) {
+    for (let c = 0; c < MAP_COLS; c++) {
+      if (G.grid[r] && G.grid[r][c] === C_EXCAVATED) {
+        ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      }
+    }
+  }
+
+  // Ambient occlusion: shade solid earth along the edges that face a cavity, so tunnels read as carved
+  const isOpen = (r, c) => !G.grid[r] || G.grid[r][c] === C_EXCAVATED;
+  const AO = 4;
+  for (let r = SURFACE_Y; r < MAP_ROWS; r++) {
+    for (let c = 0; c < MAP_COLS; c++) {
+      if (!G.grid[r] || G.grid[r][c] === C_EXCAVATED) continue;
+      const x = c * CELL_SIZE, y = r * CELL_SIZE;
+      const up = r > SURFACE_Y && isOpen(r - 1, c);
+      const down = r < MAP_ROWS - 1 && isOpen(r + 1, c);
+      const left = c > 0 && isOpen(r, c - 1);
+      const right = c < MAP_COLS - 1 && isOpen(r, c + 1);
+      if (!(up || down || left || right)) continue;
+      ctx.fillStyle = 'rgba(20, 10, 4, 0.45)';
+      if (up) ctx.fillRect(x, y, CELL_SIZE, AO);
+      if (down) ctx.fillRect(x, y + CELL_SIZE - AO, CELL_SIZE, AO);
+      if (left) ctx.fillRect(x, y, AO, CELL_SIZE);
+      if (right) ctx.fillRect(x + CELL_SIZE - AO, y, AO, CELL_SIZE);
+      // Thin lit rim on the ceiling edge
+      if (down) { ctx.fillStyle = 'rgba(255, 215, 150, 0.10)'; ctx.fillRect(x, y + CELL_SIZE - AO - 1, CELL_SIZE, 1); }
+    }
+  }
+
+  // Depth shading: the earth gets gradually darker towards the bedrock
+  const depthGrad = ctx.createLinearGradient(0, SURFACE_Y * CELL_SIZE, 0, MAP_ROWS * CELL_SIZE);
+  depthGrad.addColorStop(0, 'rgba(25, 12, 4, 0)');
+  depthGrad.addColorStop(1, 'rgba(25, 12, 4, 0.45)');
+  ctx.fillStyle = depthGrad;
+  ctx.fillRect(0, SURFACE_Y * CELL_SIZE, MAP_COLS * CELL_SIZE, (MAP_ROWS - SURFACE_Y) * CELL_SIZE);
 
   // 1. Hanging Birch/Oak Roots penetrating topsoil (Depth 0m to -12m)
   ctx.strokeStyle = '#2d1c10';

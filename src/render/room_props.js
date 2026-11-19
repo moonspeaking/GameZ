@@ -12,32 +12,32 @@ function renderRoomShell(ctx, r, rx, ry, rw, rh, G) {
   ctx.fillRect(rx - 3, ry - 3, rw + 6, rh + 6);
 
   // 2. Interior Walls: Two-tone Industrial Paint (Weathered grey top, olive/slate wainscot bottom)
-  ctx.fillStyle = '#26292e';
+  ctx.fillStyle = '#5e5849'; // warm plaster, lit by ceiling lamps
   ctx.fillRect(rx, ry, rw, rh);
 
   const wainscotY = ry + rh * 0.58;
-  ctx.fillStyle = '#1c1f24';
+  ctx.fillStyle = '#463f33';
   ctx.fillRect(rx, wainscotY, rw, rh * 0.42);
 
   // Metal wainscot trim rail
-  ctx.fillStyle = '#3a3f47';
+  ctx.fillStyle = '#7a705d';
   ctx.fillRect(rx, wainscotY - 2, rw, 2);
 
   // 3. Ambient Occlusion (Depth Shadows on Top, Left, Right ceiling corners)
   const aoTop = ctx.createLinearGradient(rx, ry, rx, ry + 12);
-  aoTop.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+  aoTop.addColorStop(0, 'rgba(15, 8, 2, 0.55)');
   aoTop.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = aoTop;
   ctx.fillRect(rx, ry, rw, 12);
 
   const aoLeft = ctx.createLinearGradient(rx, ry, rx + 10, ry);
-  aoLeft.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+  aoLeft.addColorStop(0, 'rgba(15, 8, 2, 0.45)');
   aoLeft.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = aoLeft;
   ctx.fillRect(rx, ry, 10, rh);
 
   const aoRight = ctx.createLinearGradient(rx + rw, ry, rx + rw - 10, ry);
-  aoRight.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+  aoRight.addColorStop(0, 'rgba(15, 8, 2, 0.45)');
   aoRight.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = aoRight;
   ctx.fillRect(rx + rw - 10, ry, 10, rh);

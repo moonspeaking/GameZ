@@ -141,31 +141,55 @@ export function getStrataPattern(ctx, layerIndex) {
   if (cachedPatterns[key]) return cachedPatterns[key];
   if (!ctx) return null;
 
-  const w = 64;
-  const h = 64;
+  const w = 96;
+  const h = 96;
+  // Warm sepia earth like the reference video: lighter near the surface, cooler and darker with depth.
   const baseTones = [
-    { base: '#3b2819', noise: 24, specks: '#22150a' }, // Topsoil & root earth
-    { base: '#322013', noise: 20, specks: '#1c1008' }, // Compacted silt/clay
-    { base: '#26180e', noise: 22, specks: '#150c06' }, // Pre-war dense shale
-    { base: '#1b1410', noise: 18, specks: '#100a06' }, // Deep slate & river bedrock
-    { base: '#131217', noise: 16, specks: '#09080c' }  // Basalt deep bedrock
+    { base: '#6e4c2c', noise: 26, dark: '#4a3119', light: '#8d6a43', stone: '#9a8466' }, // Topsoil & root earth
+    { base: '#5e4026', noise: 22, dark: '#3f2815', light: '#7b5836', stone: '#85705a' }, // Compacted silt/clay
+    { base: '#4d3520', noise: 22, dark: '#33210f', light: '#684a2d', stone: '#74624f' }, // Dense shale
+    { base: '#3b2a1b', noise: 18, dark: '#261a0f', light: '#4f3925', stone: '#5d5047' }, // Deep slate & river bedrock
+    { base: '#2a2630', noise: 16, dark: '#1a171e', light: '#38333f', stone: '#4a4553' }  // Basalt deep bedrock
   ];
 
   const tone = baseTones[Math.min(layerIndex, baseTones.length - 1)];
   const base = createNoiseCanvas(w, h, tone.base, tone.noise);
   const bCtx = base.getContext('2d');
 
-  // Stratified horizontal geological fissures and sediment lines
-  bCtx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-  bCtx.lineWidth = 1;
-  bCtx.beginPath();
-  bCtx.moveTo(0, 18); bCtx.bezierCurveTo(20, 22, 45, 14, 64, 19);
-  bCtx.moveTo(0, 44); bCtx.bezierCurveTo(15, 41, 50, 48, 64, 43);
-  bCtx.stroke();
+  // Soft darker / lighter blotches so the soil does not look like flat noise
+  for (let i = 0; i < 9; i++) {
+    const bx = Math.random() * w, by = Math.random() * h, br = 10 + Math.random() * 16;
+    const g = bCtx.createRadialGradient(bx, by, 1, bx, by, br);
+    const col = i % 2 === 0 ? tone.dark : tone.light;
+    g.addColorStop(0, col + '88');
+    g.addColorStop(1, col + '00');
+    bCtx.fillStyle = g;
+    bCtx.fillRect(bx - br, by - br, br * 2, br * 2);
+  }
 
-  // Mineral/rock specks
-  bCtx.fillStyle = tone.specks;
-  for (let i = 0; i < 14; i++) {
+  // Stratified horizontal sediment lines (dark crack + pale highlight beneath)
+  bCtx.lineWidth = 1;
+  [[16, 20, 12], [50, 46, 54], [78, 82, 74]].forEach(([y0, y1, y2]) => {
+    bCtx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+    bCtx.beginPath(); bCtx.moveTo(0, y0); bCtx.bezierCurveTo(28, y1, 62, y2, w, y0 + 2); bCtx.stroke();
+    bCtx.strokeStyle = 'rgba(255, 220, 160, 0.10)';
+    bCtx.beginPath(); bCtx.moveTo(0, y0 + 1.5); bCtx.bezierCurveTo(28, y1 + 1.5, 62, y2 + 1.5, w, y0 + 3.5); bCtx.stroke();
+  });
+
+  // Embedded stones: pale rounded rocks with a shadow side
+  for (let i = 0; i < 7; i++) {
+    const sx = Math.random() * w, sy = Math.random() * h, sr = 2 + Math.random() * 3.5;
+    bCtx.fillStyle = tone.dark;
+    bCtx.beginPath(); bCtx.ellipse(sx + 0.8, sy + 1, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
+    bCtx.fillStyle = tone.stone;
+    bCtx.beginPath(); bCtx.ellipse(sx, sy, sr, sr * 0.75, 0, 0, Math.PI * 2); bCtx.fill();
+    bCtx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    bCtx.beginPath(); bCtx.ellipse(sx - sr * 0.3, sy - sr * 0.25, sr * 0.4, sr * 0.28, 0, 0, Math.PI * 2); bCtx.fill();
+  }
+
+  // Fine dark grit
+  bCtx.fillStyle = tone.dark;
+  for (let i = 0; i < 26; i++) {
     bCtx.fillRect(Math.random() * w, Math.random() * h, 2, 1.5);
   }
 

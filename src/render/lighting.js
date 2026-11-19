@@ -3,7 +3,7 @@
  * Simulates subterranean darkness, room ceiling fixtures with warm tungsten falloff,
  * miner headlamp cones, blackout emergency diodes, and Red Alert strobes.
  */
-import { CELL_SIZE, SURFACE_Y, MAP_COLS } from '../core/constants.js';
+import { CELL_SIZE, SURFACE_Y, MAP_COLS, MAP_ROWS } from '../core/constants.js';
 
 let lightCanvas = null;
 let lightCtx = null;
@@ -43,13 +43,21 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
   // 1. Fill lightmap with ambient darkness
   // Above surface: depends on hour and weather. Below surface: deep pitch darkness.
   lCtx.globalCompositeOperation = 'source-over';
-  lCtx.fillStyle = 'rgba(10, 12, 16, 0.88)'; // Deep underground gloom
+  // Warm brown gloom that deepens with depth (light near the surface, darker near the bedrock),
+  // so the earth stays readable and lit rooms glow instead of floating in a black void.
+  const gTop = (SURFACE_Y * CELL_SIZE - camY) * zoom;
+  const gBottom = (MAP_ROWS * CELL_SIZE - camY) * zoom;
+  const gloom = lCtx.createLinearGradient(0, gTop, 0, Math.max(gTop + 1, gBottom));
+  gloom.addColorStop(0, 'rgba(22, 12, 6, 0.30)');
+  gloom.addColorStop(0.5, 'rgba(18, 10, 6, 0.50)');
+  gloom.addColorStop(1, 'rgba(10, 8, 12, 0.72)');
+  lCtx.fillStyle = gloom;
   lCtx.fillRect(0, 0, viewW, viewH);
 
   // Surface sky cutout (let sunlight or moonlight through)
   const surfaceScreenY = Math.floor((SURFACE_Y * CELL_SIZE - camY) * zoom);
   if (surfaceScreenY > 0) {
-    const skyAlpha = isNight ? 0.65 : (G.isWinterSnow ? 0.25 : 0.05);
+    const skyAlpha = isNight ? 0.55 : (G.isWinterSnow ? 0.15 : 0.0);
     lCtx.clearRect(0, 0, viewW, Math.min(viewH, surfaceScreenY));
     lCtx.fillStyle = `rgba(12, 16, 24, ${skyAlpha})`;
     lCtx.fillRect(0, 0, viewW, Math.min(viewH, surfaceScreenY));
@@ -90,7 +98,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
       for (let li = 1; li <= lightCount; li++) {
         const lx = rx + spacing * li;
         const ly = ry + 8;
-        const rad = Math.max(rw * 0.7, rh * 1.1);
+        const rad = Math.max(rw * 0.85, rh * 1.4);
 
         // Cut soft radial hole
         const radGrad = lCtx.createRadialGradient(lx, ly, 10, lx, ly + rh * 0.4, rad);
@@ -189,7 +197,7 @@ export function drawLightingOverlay(ctx, G, camX, camY, viewW, viewH, zoom = 1) 
       const rw = r.w * CELL_SIZE;
       const rh = r.h * CELL_SIZE;
 
-      let tint = 'rgba(255, 214, 150, 0.12)'; // warm 2700K tungsten default
+      let tint = 'rgba(255, 200, 120, 0.20)'; // warm 2700K tungsten default
       if (r.type === 'hydroponics') tint = 'rgba(215, 80, 255, 0.16)';
       else if (r.type === 'generator') tint = 'rgba(255, 140, 30, 0.15)';
       else if (r.type === 'clinic') tint = 'rgba(120, 230, 255, 0.14)';
