@@ -405,3 +405,13 @@ export function colonistsFightBreach() {
 
 // Wire finish prologue from eventBus if requested
 eventBus.on('prologue:finish', finishPrologue);
+
+export function rotateDialogue(simDt) {
+  G.dialogueTimer += simDt;
+  if (G.dialogueTimer > 8000) {
+    G.dialogueTimer = 0;
+    G.dialogueIndex = (G.dialogueIndex + 1) % G.dialogues.length;
+    const dlg = G.dialogues[G.dialogueIndex];
+    eventBus.emit('story_dialogue', { avatar: dlg.icon, name: dlg.name, text: dlg.text, rotate: true });
+  }
+}

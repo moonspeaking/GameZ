@@ -26,6 +26,7 @@ import { openResearchModal, closeResearchModal } from './ui/research_view.js';
 import { openMemorialModal, closeMemorialModal } from './ui/memorial_view.js';
 import { SaveSystem } from './systems/save.js';
 import { startLoop } from './core/loop.js';
+import { wireSystems } from './bootstrap.js';
 
 // Expose globals for HTML inline event handlers & dev console
 window.G = G;
@@ -67,6 +68,7 @@ export function initGame() {
   initGrid();
   initRenderer(canvas);
   initInput(canvas);
+  wireSystems();
   startPrologue();
 
   // Check if localStorage save exists

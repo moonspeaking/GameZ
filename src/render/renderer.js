@@ -9,8 +9,8 @@ import { drawBlueprints, drawInteractivePlacementOverlay } from './placement_ove
 import { drawColonists } from './colonist_sprites.js';
 import { updateSurveillanceFeed } from './surveillance.js';
 import { drawLightingOverlay, resizeLighting } from './lighting.js';
-import { drawParticles, spawnWeldingSparks } from './particles.js';
-import { drawFloatingTexts, spawnFloatingText } from './floating_fx.js';
+import { drawParticles, spawnWeldingSparks, updateParticles } from './particles.js';
+import { drawFloatingTexts, spawnFloatingText, updateFloatingTexts } from './floating_fx.js';
 import { AmbienceEngine } from '../audio/ambience.js';
 
 let canvas = null;
@@ -30,6 +30,12 @@ export function resizeCanvas() {
   resizeLighting(W, H);
 }
 
+/** Per-frame animation of particles and floating texts (visual-only state). */
+export function updateFx() {
+  if (G.particles) updateParticles(G.particles);
+  if (G.floatingTexts) updateFloatingTexts(G.floatingTexts);
+}
+
 export function initRenderer(cvs) {
   canvas = cvs;
   ctx = canvas.getContext('2d');
@@ -37,6 +43,9 @@ export function initRenderer(cvs) {
   window.addEventListener('resize', resizeCanvas);
   eventBus.on('canvas_resize', resizeCanvas);
   eventBus.on('render_request', render);
+  eventBus.on('floating_text', ({ x, y, text, color }) => {
+    if (G.floatingTexts) spawnFloatingText(G.floatingTexts, x, y, text, color);
+  });
   eventBus.on('room:completed', (room) => {
     if (G.particles) {
       for (let s = 0; s < 6; s++) {

@@ -52,10 +52,13 @@ flowchart TD
 1. **`core/state.js` и `core/constants.js`** не имеют зависимостей ни от чего.
 2. **`systems/*`** меняют состояние `G` и генерируют события через `event_bus.js` (`emit('toast', ...)`, `emit('sound', ...)`). Системы **не импортируют** рендереры или модули UI.
 3. **`render/*`** только читают состояние `G` и рисуют на Canvas. Никаких мутаций состояния во время отрисовки.
-4. **`ui/*`** слушают события шины (`eventBus.on('hud_update', ...)`) и обновляют DOM.
+4. **`ui/*`** слушают события шины (`eventBus.on('hud_update', ...)`) и обновляют DOM. Весь DOM-код вынесен из `systems/` и `core/` в `ui/*_view.js` (законы, наука, мемориал, режимы, голосование Совета, вылазка, сюжет). Системы эмитят семантические события (`laws_changed`, `council_vote`, `scavenge_dialog`, `story_dialogue`, `breach_overlay`, `save_status`, `victory`), а view их рисует и возвращает выбор игрока через колбэки (`cast`, `confirm`).
+5. **`core/loop.js`** — универсальный движок: часы и кадры. Он не импортирует `systems`, `render` и `world`. Всё подключается в composition root `src/bootstrap.js` (`registerUpdate('game', fn)`, `setRenderFn(fn)`, суточный тик по событию `new_day` → `systems/daily.js`).
+6. **Размер окна** системы читают из `core/viewport.js` (его обновляет рендерер), а не из `window`.
 
 ```
 src/
+├── bootstrap.js             # Composition root: порядок систем в цикле
 ├── main.js                  # Главная точка входа (регистрация global handlers, init)
 ├── core/
 │   ├── constants.js         # Константы карты, тайлов, цветов
